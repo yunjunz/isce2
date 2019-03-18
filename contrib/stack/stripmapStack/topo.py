@@ -363,6 +363,9 @@ def runSimamp(outdir, hname='z.rdr'):
 
 def runMultilook(in_dir, out_dir, alks, rlks):
     print('generate multilooked geometry files with alks={} and rlks={}'.format(alks, rlks))
+    print('input directory: {}'.format(in_dir))
+    print('output directory: {}'.format(out_dir))
+
     from iscesys.Parsers.FileParserFactory import createFileParser
     FP = createFileParser('xml')
 

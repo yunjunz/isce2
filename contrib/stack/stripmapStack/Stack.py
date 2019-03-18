@@ -212,6 +212,8 @@ class config(object):
         self.f.write('defomax : ' + self.defoMax + '\n')
         self.f.write('alks : ' + self.alks + '\n')
         self.f.write('rlks : ' + self.rlks + '\n')
+        if self.waterMaskFile:
+            self.f.write('mask : ' + self.waterMaskFile + '\n')
         self.f.write('method : ' + self.unwMethod + '\n')
         self.f.write('##########################'+'\n')
 
@@ -576,39 +578,37 @@ class run(object):
     def igrams_network(self,  pairs, acuisitionDates, stackMaster,low_or_high, config_prefix):
 
         for pair in pairs:
-             configName = os.path.join(self.configDir,config_prefix + pair[0] + '_' + pair[1])
-             configObj = config(configName)
-             configObj.configure(self)
-             
-             if pair[0] == stackMaster:
-                  configObj.masterSlc = os.path.join(self.slcDir,stackMaster + low_or_high + stackMaster+self.raw_string +'.slc')
-             else:
-                  configObj.masterSlc = os.path.join(self.workDir, self.stack_folder, 'SLC',  pair[0] + low_or_high + pair[0] + '.slc')
-
-             if pair[1] == stackMaster:
-                  configObj.slaveSlc = os.path.join(self.slcDir,stackMaster + low_or_high + stackMaster+self.raw_string+'.slc')
-             else:
-                  configObj.slaveSlc = os.path.join(self.workDir, self.stack_folder, 'SLC',  pair[1] + low_or_high + pair[1] + '.slc')
-
-             configObj.outDir = os.path.join(self.workDir, 'Igrams' + low_or_high + 
-                         pair[0] + '_'  + pair[1] +'/'+pair[0] + '_'  + pair[1])
-             configObj.generateIgram('[Function-1]')
-
-             configObj.igram = configObj.outDir+'.int'
-             configObj.filtIgram = os.path.dirname(configObj.outDir) + '/filt_' + pair[0] + '_'  + pair[1] + '.int'
-             configObj.coherence = os.path.dirname(configObj.outDir) + '/filt_' + pair[0] + '_'  + pair[1] + '.cor'
-             #configObj.filtStrength = filtStrength
-             configObj.filterCoherence('[Function-2]')
-
-             configObj.igram = configObj.filtIgram
-             configObj.unwIfg = os.path.dirname(configObj.outDir) + '/filt_' + pair[0] + '_'  + pair[1] 
-             configObj.noMCF = noMCF
-             configObj.master = os.path.join(self.slcDir,stackMaster +'/data') 
-             configObj.defoMax = defoMax
-             configObj.unwrap('[Function-3]')
-
-             configObj.finalize()
-             self.runf.write(self.text_cmd+'stripmapWrapper.py -c '+ configName+'\n')
+            configName = os.path.join(self.configDir,config_prefix + pair[0] + '_' + pair[1])
+            configObj = config(configName)
+            configObj.configure(self)
+            
+            if pair[0] == stackMaster:
+                 configObj.masterSlc = os.path.join(self.slcDir,stackMaster + low_or_high + stackMaster+self.raw_string +'.slc')
+            else:
+                 configObj.masterSlc = os.path.join(self.workDir, self.stack_folder, 'SLC',  pair[0] + low_or_high + pair[0] + '.slc')
+            if pair[1] == stackMaster:
+                 configObj.slaveSlc = os.path.join(self.slcDir,stackMaster + low_or_high + stackMaster+self.raw_string+'.slc')
+            else:
+                 configObj.slaveSlc = os.path.join(self.workDir, self.stack_folder, 'SLC',  pair[1] + low_or_high + pair[1] + '.slc')
+            configObj.outDir = os.path.join(self.workDir, 'Igrams' + low_or_high + 
+                        pair[0] + '_'  + pair[1] +'/'+pair[0] + '_'  + pair[1])
+            configObj.generateIgram('[Function-1]')
+            configObj.igram = configObj.outDir+'.int'
+            configObj.filtIgram = os.path.dirname(configObj.outDir) + '/filt_' + pair[0] + '_'  + pair[1] + '.int'
+            configObj.coherence = os.path.dirname(configObj.outDir) + '/filt_' + pair[0] + '_'  + pair[1] + '.cor'
+            #configObj.filtStrength = filtStrength
+            configObj.filterCoherence('[Function-2]')
+            configObj.igram = configObj.filtIgram
+            configObj.unwIfg = os.path.dirname(configObj.outDir) + '/filt_' + pair[0] + '_'  + pair[1] 
+            configObj.noMCF = noMCF
+            configObj.master = os.path.join(self.slcDir,stackMaster +'/data') 
+            configObj.defoMax = defoMax
+            configObj.waterMaskFile = None
+            if self.applyWaterMask:
+                configObj.waterMaskFile = os.path.join(self.workDir, 'geom_master/waterMask.rdr')
+            configObj.unwrap('[Function-3]')
+            configObj.finalize()
+            self.runf.write(self.text_cmd+'stripmapWrapper.py -c '+ configName+'\n')
 
 
     def dispersive_nonDispersive(self, pairs, acuisitionDates, stackMaster, 

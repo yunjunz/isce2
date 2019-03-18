@@ -69,7 +69,7 @@ def get_Date(ALOS_folder):
                     return successflag, acquisitionDate
 
     # if it reached here it could not find the acqusiitionDate
-    successflag = False                                                                                                                                                    
+    successflag = False
     acquisitionDate = 'FAIL'
     return successflag, acquisitionDate
 
@@ -121,7 +121,7 @@ def main(iargs=None):
             dir_unzip = get_ALOS2_name(fname)
             dir_unzip = os.path.join(workdir, dir_unzip)
 
-            # loop over two cases (either file or folder): 
+            # loop over two cases (either file or folder):
             # if this is a file, try to unzip/untar it
             if os.path.isfile(fname):
                 # unzip the file in the outfolder
@@ -168,10 +168,10 @@ def main(iargs=None):
 
 
     # loop over the different ALOS folders and organize in date folders
-    ALOS_folders = glob.glob(os.path.join(inps.inputDir, 'ALOS2*'))                        
+    ALOS_folders = glob.glob(os.path.join(inps.inputDir, 'ALOS2*'))
     for ALOS_folder in ALOS_folders:
         # get the date
-        successflag, imgDate = get_Date(ALOS_folder)       
+        successflag, imgDate = get_Date(ALOS_folder)
 
         workdir = os.path.dirname(ALOS_folder)
         if successflag:
@@ -179,19 +179,19 @@ def main(iargs=None):
             SLC_dir = os.path.join(workdir,imgDate,'')
             if not os.path.isdir(SLC_dir):
                 os.makedirs(SLC_dir)
-                
+
             # check if the folder already exist in that case overwrite it
             ALOS_folder_out = os.path.join(SLC_dir,os.path.basename(ALOS_folder))
             if os.path.isdir(ALOS_folder_out):
                 shutil.rmtree(ALOS_folder_out)
             # move the ALOS acqusition folder in the date folder
-            cmd  = 'mv ' + ALOS_folder + ' ' + SLC_dir + '.' 
+            cmd  = 'mv ' + ALOS_folder + ' ' + SLC_dir + '.'
             os.system(cmd)
 
             print ('Succes: ' + imgDate)
         else:
             print('Failed: ' + ALOS_folder)
-        
+
 
     # now generate the unpacking script for all the date dirs
     dateDirs = sorted(glob.glob(os.path.join(inps.inputDir,'2*')))
@@ -204,8 +204,8 @@ def main(iargs=None):
                 acquisitionDate = os.path.basename(dateDir)
                 slcDir = os.path.join(inps.outputDir, acquisitionDate)
                 if not os.path.exists(slcDir):
-                    os.makedirs(slcDir)     
-                cmd = 'unpackFrame_ALOS2.py -i ' + os.path.abspath(dateDir) + ' -o ' + slcDir      
+                    os.makedirs(slcDir)
+                cmd = 'unpackFrame_ALOS2.py -i ' + os.path.abspath(dateDir) + ' -o ' + slcDir
                 print (cmd)
                 f.write(inps.text_cmd + cmd+'\n')
         f.close()

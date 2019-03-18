@@ -13,16 +13,18 @@ def createParser():
     Create command line parser.
     '''
 
-    parser = argparse.ArgumentParser(description='Script that attempts to recognize the sensor automatically and then call the correspodning unzips/unpacks command.')
+    parser = argparse.ArgumentParser(description='Script that attempts to recognize the sensor automatically'+
+                                                  ' and then call the correspodning unzips/unpacks command.')
     parser.add_argument('-i', '--input', dest='input', type=str, required=True,
             help='directory which has all the slc data.')
     parser.add_argument('-rmfile', '--rmfile', dest='rmfile',action='store_true', default=False,
-            help='Optional: remove zip/tar/compressed files after unpacking into date structure (default is to keep in archive folder)')
+            help='Optional: remove zip/tar/compressed files after unpacking into date structure'+
+                 ' (default is to keep in archive folder)')
     parser.add_argument('-o', '--output', dest='output', type=str, required=False,
             help='Optional: output directory which will be used for unpacking into isce format (run file generation only).')
-    parser.add_argument('-t', '--text_cmd', dest='text_cmd', type=str, default='source ~/.bash_profile;'
-            , help='Optional: text command to be added to the beginning of each line of the run files. Default: source ~/.bash_profile;')
-
+    parser.add_argument('-t', '--text_cmd', dest='text_cmd', type=str, default='source ~/.bash_profile;', 
+            help='Optional: text command to be added to the beginning of each line of the run files. '+
+                 'Default: source ~/.bash_profile;')
     return parser
 
 def cmdLineParse(iargs=None):
@@ -57,9 +59,9 @@ def main(iargs=None):
         rmfile_str = ''
 
     # search criteria for the different sensors
-    ENV_str = 'ASA*'		    # Envisat
-    ALOS1_str = 'ALPSRP*'	    # ALOS-1/ALOS-2 Palsar, zip files and extracted files
-    CSK_str = 'EL*'		    # CSK, zip files
+    ENV_str = 'ASA*'                # Envisat
+    ALOS1_str = 'ALPSRP*'           # ALOS-1/ALOS-2 Palsar, zip files and extracted files
+    CSK_str = 'EL*'                 # CSK, zip files
     CSK_str2 = 'CSK*.h5'            # CSK, extracted files
     RSAT2_str = 'RS2*SLC*'          # RSAT2 zip files
     RSAT2_str2 = 'imagery_HH.tif'   # RSAT2 extracted files

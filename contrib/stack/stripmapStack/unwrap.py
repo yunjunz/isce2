@@ -2,19 +2,19 @@
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Copyright 2013 California Institute of Technology. ALL RIGHTS RESERVED.
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
+#
 # United States Government Sponsorship acknowledged. This software is subject to
 # U.S. export control laws and regulations and has been classified as 'EAR99 NLR'
 # (No [Export] License Required except when exporting to an embargoed country,
@@ -58,17 +58,21 @@ def createParser():
             help='Run full snaphu and not in MCF mode')
 
     parser.add_argument('-a','--alks', dest='azlooks', type=int, default=1,
-            help='Number of azimuth looks')
+            help='Number of azimuth looks. Default: 1.')
     parser.add_argument('-r', '--rlks', dest='rglooks', type=int, default=1,
-            help='Number of range looks')
+            help='Number of range looks. Default: 1.')
 
     parser.add_argument('-d', '--defomax', dest='defomax', type=float, default=2.0,
-            help='Max cycles of deformation')
+            help='Max cycles of deformation. Default: 2.')
     parser.add_argument('-s', '--master', dest='master', type=str, default='master',
             help='Master directory')
-    
+
     parser.add_argument('-m', '--method', dest='method', type=str, default='icu',
-            help='unwrapping method')
+            choices=['icu','snaphu','snaphu2stage'], help='unwrapping method. Default: icu.')
+
+    parser.add_argument('--mask', dest='maskfile', type=str, default=None,
+            help='mask file used to mask the *.int and *.cor file before unwrapping \n'
+                 'AND mask *.unw (and *.unw.conncomp file) after unwrapping.')
 
     return parser
 
@@ -111,9 +115,9 @@ def extractInfoFromPickle(pckfile, inps):
 
     hdg = burst.orbit.getHeading()
     data['earthRadius'] = elp.local_radius_of_curvature(llh.lat, hdg)
-    
+
     #azspacing  = burst.azimuthTimeInterval * sv.getScalarVelocity()
-    #azres = 20.0 
+    #azres = 20.0
     azspacing = sv.getScalarVelocity() / burst.PRF
     azres = burst.platform.antennaLength / 2.0
     azfact = azres / azspacing
@@ -135,16 +139,16 @@ def runUnwrap(infile, outfile, corfile, config, costMode = None,initMethod = Non
 
     if costMode is None:
         costMode   = 'DEFO'
-    
+
     if initMethod is None:
         initMethod = 'MST'
-    
+
     if  defomax is None:
         defomax = 4.0
-    
+
     if initOnly is None:
         initOnly = False
-    
+
     wrapName = infile
     unwrapName = outfile
 
@@ -155,7 +159,7 @@ def runUnwrap(infile, outfile, corfile, config, costMode = None,initMethod = Non
     wavelength = config['wavelength']
     width      = img.getWidth()
     length     = img.getLength()
-    earthRadius = config['earthRadius'] 
+    earthRadius = config['earthRadius']
     altitude   = config['altitude']
     rangeLooks = config['rglooks']
     azimuthLooks = config['azlooks']
@@ -232,7 +236,7 @@ def runUnwrapIcu(infile, outfile):
     intImage = isceobj.createIntImage()
     intImage.initImage(infile, 'read', width)
     intImage.createImage()
-   
+
 
     #unwImage
     unwImage = isceobj.Image.createImage()
@@ -244,10 +248,10 @@ def runUnwrapIcu(infile, outfile):
     unwImage.dataType = 'FLOAT'
     unwImage.setAccessMode('write')
     unwImage.createImage()
-    
+
     #unwrap with icu
     icuObj = Icu()
-    icuObj.filteringFlag = False      
+    icuObj.filteringFlag = False
     icuObj.useAmplitudeFlag = False
     icuObj.singlePatch = True
     icuObj.initCorrThreshold = 0.1
@@ -260,7 +264,7 @@ def runUnwrapIcu(infile, outfile):
 
 def runUnwrap2Stage(unwrappedIntFilename,connectedComponentsFilename,unwrapped2StageFilename,
                     unwrapper_2stage_name=None, solver_2stage=None):
-  
+
     if unwrapper_2stage_name is None:
         unwrapper_2stage_name = 'REDARC0'
 
@@ -295,15 +299,12 @@ def main(iargs=None):
 
     inps = cmdLineParse(iargs)
     print(inps.method)
-    if (inps.method != 'icu') and (inps.method != 'snaphu') and (inps.method != 'snaphu2stage'):
-        raise Exception("Unwrapping method needs to be either icu, snaphu or snaphu2stage")
 
     ########
     # pckfile = os.path.join(inps.master, 'data')
     interferogramDir = os.path.dirname(inps.intfile)
 
     if inps.method != 'icu':
-    
         masterShelveDir = os.path.join(interferogramDir , 'masterShelve')
         if not os.path.exists(masterShelveDir):
             os.makedirs(masterShelveDir)
@@ -315,17 +316,26 @@ def main(iargs=None):
         print(pckfile)
         metadata = extractInfoFromPickle(pckfile, inps)
 
+    # mask before PU
+    if inps.maskfile:
+        print('masking wrapped phase before unwrapping')
+        from mintpy.mask import mask_isce_file
+        out_file = '{}_msk.int'.format(inps.intfile.split('.int')[0])
+        mask_isce_file(inps.intfile, inps.maskfile, out_file=out_file)
+        inps.intfile = out_file
+
     ########
     print ('unwrapping method : ' , inps.method)
     if inps.method == 'snaphu':
-        if inps.nomcf: 
+        # unwrap
+        if inps.nomcf:
             fncall =  runUnwrap
         else:
             fncall = runUnwrapMcf
         fncall(inps.intfile, inps.unwprefix + '_snaphu.unw', inps.cohfile, metadata, defomax=inps.defomax)
 
     elif inps.method == 'snaphu2stage':
-        if inps.nomcf: 
+        if inps.nomcf:
             fncall =  runUnwrap
         else:
             fncall = runUnwrapMcf
@@ -339,6 +349,7 @@ def main(iargs=None):
     elif inps.method == 'icu':
         runUnwrapIcu(inps.intfile, inps.unwprefix + '_icu.unw')
 
+    return
 
 if __name__ == '__main__':
 

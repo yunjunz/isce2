@@ -6,11 +6,11 @@ The detailed algorithms and workflow for stack processing of stripmap SAR data c
 
 -----------------------------------
 
-To use the stripmap stack processor, make sure to add the path of your `contrib/stack/stripmapStack` folder to your `$PATH` environment varibale. 
+To use the stripmap stack processor, make sure to add the path of your `contrib/stack/stripmapStack` folder to your `$PATH` environment varibale.
 
-Currently supported workflows include a coregistered stack of SLC, interferograms, ionospheric delays. 
+Currently supported workflows include a coregistered stack of SLC, interferograms, ionospheric delays.
 
-Here are some notes to get started with processing stacks of stripmap data with ISCE. 
+Here are some notes to get started with processing stacks of stripmap data with ISCE.
 
 #### 1. Create your project folder somewhere   
 
@@ -37,16 +37,16 @@ cd ..
 ##### 3.1 create a folder to download SAR data (i.e. ALOS-1 data from ASF)   
 
 ```
-mkdir download 
+mkdir download
 cd download
 ```
 
 ##### 3.2 Download the data that that you want to process to the "downlowd" directory   
 
 #### 4. Prepare SAR data    
-    
+
 Once all data have been downloaded, we need to unzip them and move them to different folders and getting ready for unpacking and then SLC generation. This can be done by running the following command in a directory above "download":
-      
+
 ```
 prepRawALOS.py -i download/ -o SLC
 ```

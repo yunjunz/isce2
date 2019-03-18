@@ -50,12 +50,15 @@ def createParser():
     parser.add_argument('-S', '--sensor', dest='sensor', type=str, required=False,
             help='SAR sensor used to define square multi-look pixels')
 
-    parser.add_argument('-u', '--unw_method', dest='unwMethod', type=str, default='snaphu', 
-            help='unwrapping method (icu, snaphu, or snaphu2stage)')
-
     parser.add_argument('-f','--filter_strength', dest='filtStrength', type=str, default=filtStrength,
             help='strength of Goldstein filter applied to the wrapped phase before spatial coherence estimation.'
                  ' Default: {}'.format(filtStrength))
+
+    parser.add_argument('-u', '--unw_method', dest='unwMethod', type=str, default='snaphu', 
+            help='unwrapping method (icu, snaphu, or snaphu2stage)')
+
+    parser.add_argument('--applyWaterMask', dest='applyWaterMask', action='store_true',
+            help='apply water mask before and after unwrapping')
 
     iono = parser.add_argument_group('Ionosphere', 'Configurationas for ionospheric correction')
     iono.add_argument('-L', '--low_band_frequency', dest='fL', type=str, default=None,
@@ -106,7 +109,7 @@ def cmdLineParse(iargs = None):
 
     
 def get_dates(inps):
- 
+
     dirs = glob.glob(inps.slcDir+'/*')
     acuisitionDates = []
     for dirf in dirs:
@@ -300,7 +303,6 @@ def main(iargs=None):
   # name of the folder of the coreg SLCs including baselines, SLC, geom_master subfolders
   inps.stack_folder = 'merged'
   inps.dense_offsets_folder = 'dense_offsets'
-
 
   # check if a sensor is defined and update if needed azimuth looks to give square pixels
   ar=1
