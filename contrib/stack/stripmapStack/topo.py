@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
+
+import os
 import argparse
+import shelve
+import datetime 
+import shutil
+import numpy as np
 import isce
 import isceobj
-import numpy as np
-import shelve
-import os
-import datetime 
 from isceobj.Constants import SPEED_OF_LIGHT
 from isceobj.Util.Poly2D import Poly2D
+from mroipac.looks.Looks import Looks
 
 def createParser():
     '''
@@ -328,6 +331,7 @@ def runTopoCPU(info, demImage, dop=None,
     topo.topo()
     return
 
+
 def runSimamp(outdir, hname='z.rdr'):
     from iscesys.StdOEL.StdOELPy import create_writer
     
@@ -354,6 +358,43 @@ def runSimamp(outdir, hname='z.rdr'):
     simImage.renderHdr()
     hgtImage.finalizeImage()
     simImage.finalizeImage()
+    return
+
+
+def runMultilook(in_dir, out_dir, alks, rlks):
+    print('generate multilooked geometry files with alks={} and rlks={}'.format(alks, rlks))
+    from iscesys.Parsers.FileParserFactory import createFileParser
+    FP = createFileParser('xml')
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+        print('create directory: {}'.format(out_dir))
+
+    for fbase in ['hgt', 'incLocal', 'lat', 'lon', 'los', 'shadowMask']:
+        fname = '{}.rdr'.format(fbase)
+        in_file = os.path.join(in_dir, fname)
+        out_file = os.path.join(out_dir, fname)
+
+        xmlProp = FP.parse(in_file+'.xml')[0]
+        if('image_type' in xmlProp and xmlProp['image_type'] == 'dem'):
+            inImage = isceobj.createDemImage()
+        else:
+            inImage = isceobj.createImage()
+
+        inImage.load(in_file+'.xml')
+        inImage.filename = in_file
+
+        lkObj = Looks()
+        lkObj.setDownLooks(alks)
+        lkObj.setAcrossLooks(rlks)
+        lkObj.setInputImage(inImage)
+        lkObj.setOutputFilename(out_file)
+        lkObj.looks()
+
+        shutil.copy(in_file+'.xml', out_file+'.full.xml')  #temp fix, not good enough
+        shutil.copy(in_file+'.vrt', out_file+'.full.vrt')  #temp fix, not good enough
+
+    return out_dir
 
 
 def extractInfo(frame, inps):
@@ -419,9 +460,7 @@ def main(iargs=None):
         doppler = db['doppler']
     except:
         doppler = frame._dopplerVsPixel
-
     db.close()
-
 
 
     ####Setup dem
@@ -439,9 +478,14 @@ def main(iargs=None):
     info.incFilename = os.path.join(info.outdir, 'incLocal.rdr')
     info.maskFilename = os.path.join(info.outdir, 'shadowMask.rdr')
 
-
     runTopo(info,demImage,dop=doppler,nativedop=inps.nativedop, legendre=inps.legendre)
     runSimamp(os.path.dirname(info.heightFilename),os.path.basename(info.heightFilename))
+
+    if inps.rlks * inps.rlks > 1:
+        out_dir = os.path.join(os.path.dirname(os.path.dirname(info.outdir)), 'geom_master')
+        runMultilook(in_dir=info.outdir, out_dir=out_dir, alks=inps.alks, rlks=inps.rlks)
+
+    return
 
 
 if __name__ == '__main__':
