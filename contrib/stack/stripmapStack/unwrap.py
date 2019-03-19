@@ -70,6 +70,10 @@ def createParser():
     parser.add_argument('-m', '--method', dest='method', type=str, default='icu',
             help='unwrapping method')
 
+    parser.add_argument('--mask', dest='maskfile', type=str, default=None,
+            help='mask file used to mask the *.int and *.cor file before unwrapping \n'
+                 'AND mask *.unw (and *.unw.conncomp file) after unwrapping.')
+
     return parser
 
 
@@ -301,26 +305,51 @@ def main(iargs=None):
     # pckfile = os.path.join(inps.master, 'data')
     interferogramDir = os.path.dirname(inps.intfile)
 
-    if inps.method != 'icu':
-    
-       masterShelveDir = os.path.join(interferogramDir , 'masterShelve')
-       if not os.path.exists(masterShelveDir):
-          os.makedirs(masterShelveDir)
+    if inps.method != 'icu':    
+        masterShelveDir = os.path.join(interferogramDir , 'masterShelve')
+        if not os.path.exists(masterShelveDir):
+            os.makedirs(masterShelveDir)
+ 
+        inps.master = os.path.dirname(inps.master)
+        cpCmd='cp ' + os.path.join(inps.master, 'data*') +' '+masterShelveDir
+        os.system(cpCmd)
+        pckfile = os.path.join(masterShelveDir,'data')
+        print(pckfile)
+        metadata = extractInfoFromPickle(pckfile, inps)
 
-       inps.master = os.path.dirname(inps.master)
-       cpCmd='cp ' + os.path.join(inps.master, 'data*') +' '+masterShelveDir
-       os.system(cpCmd)
-       pckfile = os.path.join(masterShelveDir,'data')
-       print(pckfile)
-       metadata = extractInfoFromPickle(pckfile, inps)
     ########
     print ('unwrapping method : ' , inps.method)
     if inps.method == 'snaphu':
-       if inps.nomcf: 
-           fncall =  runUnwrap
-       else:
-           fncall = runUnwrapMcf
-       fncall(inps.intfile, inps.unwprefix + '_snaphu.unw', inps.cohfile, metadata, defomax=inps.defomax)
+        # mask before PU
+        if inps.maskfile:
+            print('masking wrapped phase and coherence before unwrapping')
+            from pysar.mask import mask_isce_file
+            out_file = '{}_msk.int'.format(inps.intfile.split('.int')[0])
+            mask_isce_file(inps.intfile, inps.maskfile, out_file=out_file)
+            inps.intfile = out_file
+
+            out_file = '{}_msk.cor'.format(inps.cohfile.split('.cor')[0])
+            mask_isce_file(inps.cohfile, inps.maskfile, out_file=out_file)
+            inps.cohfile = out_file
+
+        # unwrap
+        if inps.nomcf: 
+            fncall =  runUnwrap
+        else:
+            fncall = runUnwrapMcf
+        fncall(inps.intfile, inps.unwprefix + '_snaphu.unw', inps.cohfile, metadata, defomax=inps.defomax)
+
+        # mask after PU
+        if inps.maskfile:
+            print('masking unwrapped phase and connected components after unwrapping')
+            in_file = inps.unwprefix + '_snaphu.unw'
+            out_file = '{}_msk.unw'.format(in_file.split('.unw')[0])
+            mask_isce_file(in_file, inps.maskfile, out_file=out_file)
+
+            in_file = inps.unwprefix + '_snaphu.unw.conncomp'
+            out_file = '{}_msk.unw.conncomp'.format(in_file.split('.unw.conncomp')[0])
+            mask_isce_file(in_file, inps.maskfile, out_file=out_file)
+
     elif inps.method == 'snaphu2stage':
         if inps.nomcf: 
             fncall =  runUnwrap
@@ -329,12 +358,15 @@ def main(iargs=None):
         fncall(inps.intfile, inps.unwprefix + '_snaphu.unw', inps.cohfile, metadata, defomax=inps.defomax)
 
         # adding in the two-stage
-        runUnwrap2Stage(inps.unwprefix + '_snaphu.unw', inps.unwprefix + '_snaphu.unw.conncomp',inps.unwprefix + '_snaphu2stage.unw')
-
+        runUnwrap2Stage(inps.unwprefix + '_snaphu.unw',
+                        inps.unwprefix + '_snaphu.unw.conncomp',
+                        inps.unwprefix + '_snaphu2stage.unw')
 
     elif inps.method == 'icu':
-       runUnwrapIcu(inps.intfile, inps.unwprefix + '_icu.unw')
-
+        runUnwrapIcu(inps.intfile, inps.unwprefix + '_icu.unw')
+    else:
+        raise ValueError('unrecognized input unwrapping method: {}'.format(inps.method))
+    return
 
 if __name__ == '__main__':
 

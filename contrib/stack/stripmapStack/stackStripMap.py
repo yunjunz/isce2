@@ -50,12 +50,15 @@ def createParser():
     parser.add_argument('-S', '--sensor', dest='sensor', type=str, required=False,
             help='SAR sensor used to define square multi-look pixels')
 
-    parser.add_argument('-u', '--unw_method', dest='unwMethod', type=str, default='snaphu', 
-            help='unwrapping method (icu, snaphu, or snaphu2stage)')
-
     parser.add_argument('-f','--filter_strength', dest='filtStrength', type=str, default=filtStrength,
             help='strength of Goldstein filter applied to the wrapped phase before spatial coherence estimation.'
                  ' Default: {}'.format(filtStrength))
+
+    parser.add_argument('-u', '--unw_method', dest='unwMethod', type=str, default='snaphu', 
+            help='unwrapping method (icu, snaphu, or snaphu2stage)')
+
+    parser.add_argument('--applyWaterMask', dest='applyWaterMask', action='store_true',
+            help='apply water mask before and after unwrapping')
 
     iono = parser.add_argument_group('Ionosphere', 'Configurationas for ionospheric correction')
     iono.add_argument('-L', '--low_band_frequency', dest='fL', type=str, default=None,
