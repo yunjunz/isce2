@@ -410,8 +410,8 @@ def extractInfo(frame, inps):
 
     info.lookSide = frame.instrument.platform.pointingDirection
     info.rangeFirstSample = frame.startingRange
-    info.numberRangeLooks = inps.rlks
-    info.numberAzimuthLooks = inps.alks
+    info.numberRangeLooks = 1 #inps.rlks
+    info.numberAzimuthLooks = 1 #inps.alks
 
     fsamp = frame.rangeSamplingRate
 
