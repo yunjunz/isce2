@@ -317,38 +317,23 @@ def main(iargs=None):
         print(pckfile)
         metadata = extractInfoFromPickle(pckfile, inps)
 
+    # mask before PU
+    if inps.maskfile:
+        print('masking wrapped phase before unwrapping')
+        from pysar.mask import mask_isce_file
+        out_file = '{}_msk.int'.format(inps.intfile.split('.int')[0])
+        mask_isce_file(inps.intfile, inps.maskfile, out_file=out_file)
+        inps.intfile = out_file
+
     ########
     print ('unwrapping method : ' , inps.method)
     if inps.method == 'snaphu':
-        # mask before PU
-        if inps.maskfile:
-            print('masking wrapped phase and coherence before unwrapping')
-            from pysar.mask import mask_isce_file
-            out_file = '{}_msk.int'.format(inps.intfile.split('.int')[0])
-            mask_isce_file(inps.intfile, inps.maskfile, out_file=out_file)
-            inps.intfile = out_file
-
-            out_file = '{}_msk.cor'.format(inps.cohfile.split('.cor')[0])
-            mask_isce_file(inps.cohfile, inps.maskfile, out_file=out_file)
-            inps.cohfile = out_file
-
         # unwrap
         if inps.nomcf: 
             fncall =  runUnwrap
         else:
             fncall = runUnwrapMcf
         fncall(inps.intfile, inps.unwprefix + '_snaphu.unw', inps.cohfile, metadata, defomax=inps.defomax)
-
-        # mask after PU
-        if inps.maskfile:
-            print('masking unwrapped phase and connected components after unwrapping')
-            in_file = inps.unwprefix + '_snaphu.unw'
-            out_file = '{}_msk.unw'.format(in_file.split('.unw')[0])
-            mask_isce_file(in_file, inps.maskfile, out_file=out_file)
-
-            in_file = inps.unwprefix + '_snaphu.unw.conncomp'
-            out_file = '{}_msk.unw.conncomp'.format(in_file.split('.unw.conncomp')[0])
-            mask_isce_file(in_file, inps.maskfile, out_file=out_file)
 
     elif inps.method == 'snaphu2stage':
         if inps.nomcf: 
