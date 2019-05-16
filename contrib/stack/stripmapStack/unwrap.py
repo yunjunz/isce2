@@ -320,7 +320,7 @@ def main(iargs=None):
     # mask before PU
     if inps.maskfile:
         print('masking wrapped phase before unwrapping')
-        from pysar.mask import mask_isce_file
+        from mintpy.mask import mask_isce_file
         out_file = '{}_msk.int'.format(inps.intfile.split('.int')[0])
         mask_isce_file(inps.intfile, inps.maskfile, out_file=out_file)
         inps.intfile = out_file

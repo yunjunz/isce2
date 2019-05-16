@@ -304,7 +304,6 @@ def main(iargs=None):
   inps.stack_folder = 'merged'
   inps.dense_offsets_folder = 'dense_offsets'
 
-
   # check if a sensor is defined and update if needed azimuth looks to give square pixels
   ar=1
   if inps.sensor:
