@@ -100,6 +100,9 @@ def createParser():
     parser.add_argument('--gpuid', '--gid', '--gpu-id', dest='gpuid', type=int, default=-1,
                         help='GPU ID (default: %(default)s).')
 
+    parser.add_argument('-alg', '--algorithm', type=int, default=0
+       , help='algorithm to use (0 = frequency, 1 = spatial)')
+
     return parser
 
 
@@ -136,7 +139,7 @@ def estimateOffsetField(master, slave, inps=None):
 
     objOffset = PyCuAmpcor()
 
-    objOffset.algorithm = 0
+    objOffset.algorithm = inps.algorithm
     objOffset.deviceID = inps.gpuid  # -1:let system find the best GPU
     objOffset.nStreams = 2 #cudaStreams
     objOffset.derampMethod = inps.deramp
