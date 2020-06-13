@@ -208,10 +208,10 @@ def estimateOffsetField(master, slave, inps=None):
     print("snr: ",objOffset.snrImageName)
     print("cov: ",objOffset.covImageName)
 
-    offsetImageName = objOffset.offsetImageName.decode('utf8')
-    grossOffsetImageName = objOffset.grossOffsetImageName.decode('utf8')
-    snrImageName = objOffset.snrImageName.decode('utf8')
-    covImageName = objOffset.covImageName.decode('utf8')
+    offsetImageName = objOffset.offsetImageName
+    grossOffsetImageName = objOffset.grossOffsetImageName
+    snrImageName = objOffset.snrImageName
+    covImageName = objOffset.covImageName
 
     print(offsetImageName)
     print(inps.redo)

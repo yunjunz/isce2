@@ -322,27 +322,27 @@ cdef class PyCuAmpcor(object):
     ## gross offets
     @property
     def grossOffsetImageName(self):
-        return self.c_cuAmpcor.param.grossOffsetImageName
+        return self.c_cuAmpcor.param.grossOffsetImageName.decode("utf-8")
     @grossOffsetImageName.setter
     def grossOffsetImageName(self, str a):
         self.c_cuAmpcor.param.grossOffsetImageName = <string> a.encode()
     @property
     def offsetImageName(self):
-        return self.c_cuAmpcor.param.offsetImageName
+        return self.c_cuAmpcor.param.offsetImageName.decode("utf-8")
     @offsetImageName.setter
     def offsetImageName(self, str a):
         self.c_cuAmpcor.param.offsetImageName = <string> a.encode()
 
     @property
     def snrImageName(self):
-        return self.c_cuAmpcor.param.snrImageName
+        return self.c_cuAmpcor.param.snrImageName.decode("utf-8")
     @snrImageName.setter
     def snrImageName(self, str a):
         self.c_cuAmpcor.param.snrImageName = <string> a.encode()
 
     @property
     def covImageName(self):
-        return self.c_cuAmpcor.param.covImageName
+        return self.c_cuAmpcor.param.covImageName.decode("utf-8")
     @covImageName.setter
     def covImageName(self, str a):
         self.c_cuAmpcor.param.covImageName = <string> a.encode()
