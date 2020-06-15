@@ -28,8 +28,7 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
     //cross correlation for none-oversampled data
     if(param->algorithm == 0) {
         cuCorrFreqDomain->execute(r_masterBatchRaw, r_slaveBatchRaw, r_corrBatchRaw);
-    }
-    else {
+    } else {
         cuCorrTimeDomain(r_masterBatchRaw, r_slaveBatchRaw, r_corrBatchRaw, stream); //time domain cross correlation
     }
     cuCorrNormalize(r_masterBatchRaw, r_slaveBatchRaw, r_corrBatchRaw, stream);
@@ -40,7 +39,9 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
     //cuArraysMaxloc2D(r_corrBatchRaw, offsetInit, stream);
     cuArraysMaxloc2D(r_corrBatchRaw, offsetInit, r_maxval, stream);
 
+#ifndef NDEBUG
     offsetInit->outputToFile("offsetInit1", stream);
+#endif
 
     // Estimation of statistics
     // Author: Minyan Zhong
@@ -49,11 +50,13 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
 
     cudaDeviceSynchronize();
 
+#ifndef NDEBUG
     // debug: output the intermediate results
     r_maxval->outputToFile("r_maxval",stream);
     r_corrBatchRaw->outputToFile("r_corrBatchRaw",stream);
     r_corrBatchRawZoomIn->outputToFile("r_corrBatchRawZoomIn",stream);
     i_corrBatchZoomInValid->outputToFile("i_corrBatchZoomInValid",stream);
+#endif
 
     // Summation of correlation and data point values
     cuArraysSumCorr(r_corrBatchRawZoomIn, i_corrBatchZoomInValid, r_corrBatchSum, i_corrBatchValidCount, stream);
@@ -129,9 +132,11 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
     // Offsetfields.
     cuArraysCopyInsert(offsetFinal, offsetImage, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
 
+#ifndef NDEBUG
     // Debugging matrix.
     cuArraysCopyInsert(r_corrBatchSum, floatImage1, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
     cuArraysCopyInsert(i_corrBatchValidCount, intImage1, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
+#endif
 
     // Old: save max correlation coefficients.
     //cuArraysCopyInsert(corrMaxValue, snrImage, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
@@ -494,10 +499,9 @@ cuAmpcorChunk::cuAmpcorChunk(cuAmpcorParameter *param_, GDALImage *master_, GDAL
             stream);
     }
 
-
-
+#ifndef NDEBUG
     debugmsg("all objects in chunk are created ...\n");
-
+#endif
 }
 cuAmpcorChunk::~cuAmpcorChunk()
 {

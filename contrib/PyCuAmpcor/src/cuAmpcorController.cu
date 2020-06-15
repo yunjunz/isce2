@@ -106,9 +106,11 @@ void cuAmpcorController::runAmpcor() {
     snrImage->outputToFile(param->snrImageName, streams[0]);
     covImage->outputToFile(param->covImageName, streams[0]);
 
+#ifndef NDEBUG
     // Output debugging arrays.
     intImage1->outputToFile("intImage1", streams[0]);
     floatImage1->outputToFile("floatImage1", streams[0]);
+#endif
 
     outputGrossOffsets();
 
