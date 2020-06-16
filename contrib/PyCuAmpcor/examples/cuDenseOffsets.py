@@ -164,6 +164,10 @@ def estimateOffsetField(master, slave, inps=None):
     print("offset field length: ",objOffset.numberWindowDown)
     print("offset field width: ",objOffset.numberWindowAcross)
 
+    gross_offset_down   = inps.azshift
+    gross_offset_across = inps.rgshift
+    objOffset.setConstantGrossOffset(gross_offset_down, gross_offset_across):
+
     # window size
     objOffset.windowSizeHeight = inps.winhgt
     objOffset.windowSizeWidth = inps.winwidth
