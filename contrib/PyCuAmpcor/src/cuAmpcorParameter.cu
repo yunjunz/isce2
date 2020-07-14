@@ -54,9 +54,6 @@ cuAmpcorParameter::cuAmpcorParameter()
     masterStartPixelDown0 = 0;
     masterStartPixelAcross0 = 0;
 
-    corrRawZoomInHeight = 17; // 8*2+1
-    corrRawZoomInWidth = 17;
-
     useMmap = 1; // use mmap
     mmapSizeInGB = 1;
 
@@ -70,6 +67,8 @@ void cuAmpcorParameter::setupParameters()
 {
     zoomWindowSize *= rawDataOversamplingFactor; //8 * 2
     halfZoomWindowSizeRaw = zoomWindowSize/(2*rawDataOversamplingFactor); // 8*2/(2*2) = 4
+    corrRawZoomInHeight = zoomWindowSize + 1;
+    corrRawZoomInWidth  = zoomWindowSize + 1;
 
     windowSizeWidth = windowSizeWidthRaw*rawDataOversamplingFactor;  //
     windowSizeHeight = windowSizeHeightRaw*rawDataOversamplingFactor;
