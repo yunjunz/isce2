@@ -62,7 +62,7 @@
         //cudaStreamSynchronize(stream);
         //std::cout << "debug debuginfo " << size << " " << count << " " << stream << "\n";
 
-		int range = min(10, size*count);
+		int range = std::min(10, size*count);
 	
 		for(int i=0; i<range; i++)
 			std::cout << "(" <<hostData[i].x << " ," << hostData[i].y << ")" ;
@@ -81,7 +81,7 @@
         if( !is_allocatedHost)
     		allocateHost();
         copyToHost(stream);
-		int range = min(10, size*count);
+		int range = std::min(10, size*count);
 	
 		for(int i=0; i<range; i++)
 			std::cout << "(" <<hostData[i].x << " ," << hostData[i].y << ")" ;
@@ -100,7 +100,7 @@
     		allocateHost();
         copyToHost(stream);
 		
-		int range = min(10, size*count);
+		int range = std::min(10, size*count);
 	
 		for(int i=0; i<range; i++)
 			std::cout << "(" <<hostData[i]  << ")" ;
