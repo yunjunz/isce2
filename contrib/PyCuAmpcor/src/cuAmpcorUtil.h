@@ -6,7 +6,7 @@
 
 
 #ifndef __CUAMPCORUTIL_H
-#define __CUMAPCORUTIL_H
+#define __CUAMPCORUTIL_H
 
 #include "cuArrays.h"
 #include "cuAmpcorParameter.h"
