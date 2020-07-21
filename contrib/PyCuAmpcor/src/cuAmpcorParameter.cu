@@ -68,8 +68,8 @@ cuAmpcorParameter::cuAmpcorParameter()
 void cuAmpcorParameter::setupParameters()
 {
     // Size to extract the raw correlation surface for snr/cov
-    corrRawZoomInHeight = min(corrStatWindowSize, 2*halfSearchRangeDownRaw+1);
-    corrRawZoomInWidth = min(corrStatWindowSize, 2*halfSearchRangeAcrossRaw+1);
+    corrRawZoomInHeight = std::min(corrStatWindowSize, 2*halfSearchRangeDownRaw+1);
+    corrRawZoomInWidth = std::min(corrStatWindowSize, 2*halfSearchRangeAcrossRaw+1);
 
     // Size to extract the resampled correlation surface for oversampling
     zoomWindowSize *= rawDataOversamplingFactor; //8 * 2
