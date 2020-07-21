@@ -5,11 +5,12 @@
 #include <assert.h>
 #include <stdio.h>
 
-#ifdef CUAMPCOR_DEBUG
+#ifndef NDEBUG
+#define CUAMPCOR_DEBUG
 #define CUDA_ERROR_CHECK
 #define debugmsg(msg) fprintf(stderr, msg)
 #else
 #define debugmsg(msg)
-#endif //CUAMPCOR_DEBUG
+#endif //NDEBUG
 
 #endif //__DEBUG_H

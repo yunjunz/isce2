@@ -38,9 +38,6 @@ include(isce2_helpers)
 
 enable_testing()
 
-# Compile option for PyCuAmpcor
-set(WITH_PYCUAMPCOR_DEBUG OFF CACHE BOOL "enable PyCuAmpcor debugging")
-
 add_subdirectory(applications)
 add_subdirectory(components)
 add_subdirectory(contrib components/contrib)
