@@ -33,6 +33,10 @@ cython_add_module(PyCuAmpcor
 target_include_directories(PyCuAmpcor PRIVATE
     src
     )
+if(WITH_PYCUAMPCOR_DEBUG)
+    target_compile_definitions(PyCuAmpcor PRIVATE CUAMPCOR_DEBUG)
+    message(STATUS "enable PyCuAmpcor debugging")
+endif()
 target_link_libraries(PyCuAmpcor PRIVATE
     CUDA::cufft
     CUDA::cublas
