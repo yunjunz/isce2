@@ -43,10 +43,12 @@ cdef extern from "cuAmpcorParameter.h":
         int skipSampleDownRaw    			## Skip size between neighboring windows in Down direction (original size)
         int skipSampleAcrossRaw  			## Skip size between neighboring windows in across direction (original size)
 
+        int corrStatWindowSize                   ## Size of the raw correlation surface extracted for statistics
+
         ## Zoom in region near location of max correlation
         int zoomWindowSize       			## Zoom-in window size in correlation surface (same for down and across directions)
         int oversamplingFactor   			## Oversampling factor for interpolating correlation surface
-        int oversamplingMethod
+        int oversamplingMethod              ## Correlation surface oversampling method 0=fft, 1=sinc
 
         float thresholdSNR       			## Threshold of Signal noise ratio to remove noisy data
 
@@ -216,6 +218,13 @@ cdef class PyCuAmpcor(object):
     @rawDataOversamplingFactor.setter
     def rawDataOversamplingFactor(self, int a):
         self.c_cuAmpcor.param.rawDataOversamplingFactor = a
+    @property
+    def corrStatWindowSize(self):
+        """Size of correlation surface extracted for statistics"""
+        return self.c_cuAmpcor.param.corrStatWindowSize
+    @corrStatWindowSize.setter
+    def corrStatWindowSize(self, int a):
+        self.c_cuAmpcor.param.corrStatWindowSize = a
     @property
     def corrSurfaceZoomInWindow(self):
         """Zoom-In Window Size for correlation surface"""

@@ -32,8 +32,8 @@ private:
 	cuArrays<float3> *covImage;
 
 	// added for test
-    cuArrays<int> *intImage1;
-    cuArrays<float> *floatImage1;
+    cuArrays<int> *corrValidCountImage;
+    cuArrays<float> *corrSumImage;
 
     // gpu buffer
 	cuArrays<float2> * c_referenceChunkRaw, * c_secondaryChunkRaw;
@@ -85,7 +85,7 @@ public:
 	void setIndex(int idxDown_, int idxAcross_);
 
 	cuAmpcorChunk(cuAmpcorParameter *param_, GDALImage *reference_, GDALImage *secondary_, cuArrays<float2> *offsetImage_,
-	            cuArrays<float> *snrImage_, cuArrays<float3> *covImage_, cuArrays<int> *intImage1_, cuArrays<float> *floatImage1_, cudaStream_t stream_);
+	            cuArrays<float> *snrImage_, cuArrays<float3> *covImage_, cuArrays<int> *corrValidCountImage_, cuArrays<float> *corrSumImage_, cudaStream_t stream_);
 
 
     void loadReferenceChunk();

@@ -27,13 +27,13 @@ void cuAmpcorController::runAmpcor() {
     cuArrays<float3> *covImage, *covImageRun;
 
     // For debugging.
-    cuArrays<int> *intImage1;
-    cuArrays<float> *floatImage1;
+    cuArrays<int> *corrValidCountImage;
+    cuArrays<float> *corrSumImage;
 
     int nWindowsDownRun = param->numberChunkDown * param->numberWindowDownInChunk;
     int nWindowsAcrossRun = param->numberChunkAcross * param->numberWindowAcrossInChunk;
 
-    std::cout << "Debug " << nWindowsDownRun << " " << param->numberWindowDown << "\n";
+    //std::cout << "The number of windows to be processed (might be bigger) " << nWindowsDownRun << " x " << param->numberWindowDown << "\n";
 
     offsetImageRun = new cuArrays<float2>(nWindowsDownRun, nWindowsAcrossRun);
     offsetImageRun->allocate();
@@ -45,12 +45,12 @@ void cuAmpcorController::runAmpcor() {
     covImageRun->allocate();
 
     // intImage 1 and floatImage 1 are added for debugging issues
+    // debugging matrices for keeping the summation and valid count of correlation surface stats
+    corrValidCountImage = new cuArrays<int>(nWindowsDownRun, nWindowsAcrossRun);
+    corrValidCountImage->allocate();
 
-    intImage1 = new cuArrays<int>(nWindowsDownRun, nWindowsAcrossRun);
-    intImage1->allocate();
-
-    floatImage1 = new cuArrays<float>(nWindowsDownRun, nWindowsAcrossRun);
-    floatImage1->allocate();
+    corrSumImage = new cuArrays<float>(nWindowsDownRun, nWindowsAcrossRun);
+    corrSumImage->allocate();
 
     // Offsetfields.
     offsetImage = new cuArrays<float2>(param->numberWindowDown, param->numberWindowAcross);
@@ -69,7 +69,8 @@ void cuAmpcorController::runAmpcor() {
     for(int ist=0; ist<param->nStreams; ist++)
     {
         cudaStreamCreate(&streams[ist]);
-        chunk[ist]= new cuAmpcorChunk(param, referenceImage, secondaryImage, offsetImageRun, snrImageRun, covImageRun, intImage1, floatImage1, streams[ist]);
+        chunk[ist]= new cuAmpcorChunk(param, referenceImage, secondaryImage, offsetImageRun, snrImageRun, covImageRun,
+            corrValidCountImage, corrSumImage, streams[ist]);
 
     }
 
@@ -107,8 +108,8 @@ void cuAmpcorController::runAmpcor() {
     covImage->outputToFile(param->covImageName, streams[0]);
 
     // Output debugging arrays.
-    intImage1->outputToFile("intImage1", streams[0]);
-    floatImage1->outputToFile("floatImage1", streams[0]);
+    corrValidCountImage->outputToFile("i_corrValidCount", streams[0]);
+    corrSumImage->outputToFile("r_corrSum", streams[0]);
 
     outputGrossOffsets();
 
@@ -117,8 +118,8 @@ void cuAmpcorController::runAmpcor() {
     delete snrImage;
     delete covImage;
 
-    delete intImage1;
-    delete floatImage1;
+    delete corrValidCountImage;
+    delete corrSumImage;
 
     delete offsetImageRun;
     delete snrImageRun;

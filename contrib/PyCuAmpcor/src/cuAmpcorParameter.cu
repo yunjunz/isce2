@@ -54,8 +54,7 @@ cuAmpcorParameter::cuAmpcorParameter()
     referenceStartPixelDown0 = 0;
     referenceStartPixelAcross0 = 0;
 
-    corrRawZoomInHeight = 17; // 8*2+1
-    corrRawZoomInWidth = 17;
+    corrStatWindowSize = 21; // 10*2+1 as in RIOPAC
 
     useMmap = 1; // use mmap
     mmapSizeInGB = 1;
@@ -68,6 +67,11 @@ cuAmpcorParameter::cuAmpcorParameter()
 
 void cuAmpcorParameter::setupParameters()
 {
+    // Size to extract the raw correlation surface for snr/cov
+    corrRawZoomInHeight = min(corrStatWindowSize, 2*halfSearchRangeDownRaw+1);
+    corrRawZoomInWidth = min(corrStatWindowSize, 2*halfSearchRangeAcrossRaw+1);
+
+    // Size to extract the resampled correlation surface for oversampling
     zoomWindowSize *= rawDataOversamplingFactor; //8 * 2
     halfZoomWindowSizeRaw = zoomWindowSize/(2*rawDataOversamplingFactor); // 8*2/(2*2) = 4
 

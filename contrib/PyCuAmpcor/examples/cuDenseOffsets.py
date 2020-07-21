@@ -77,10 +77,14 @@ def createParser():
                        help='Gross range offset (default: %(default)s).')
 
     corr = parser.add_argument_group('Correlation surface')
+    corr.add_argument('--corr-stat-size', type=int, dest='corr_stat_win_size', default=21,
+                      help='Zoom-in window size of the correlation surface for statistics(snr/cov) (default: %(default)s).'))
     corr.add_argument('--corr-win-size', type=int, dest='corr_win_size', default=-1,
                       help='Zoom-in window size of the correlation surface for oversampling (default: %(default)s).')
     corr.add_argument('--corr-osf', '--oo', '--corr-over-samp-factor', type=int, dest='corr_oversample', default=32,
                       help = 'Oversampling factor of the zoom-in correlation surface (default: %(default)s).')
+    corr.add_argument('--corr-osm', '--corr-over-samp-method', type=int, dest='corr_oversamplemethod', default=0,
+                      help = 'Oversampling method for the correlation surface 0=fft, 1=sinc (default: %(default)s).')
 
     parser.add_argument('--nwa', type=int, dest='numWinAcross', default=-1,
                         help='Number of window across (default: %(default)s).')
@@ -96,9 +100,26 @@ def createParser():
 
     parser.add_argument('--drmp', '--deramp', dest='deramp', type=int, default=0,
                         help='deramp method (0: mag, 1: complex) (default: %(default)s).')
-
+    # gpu settings
     parser.add_argument('--gpuid', '--gid', '--gpu-id', dest='gpuid', type=int, default=-1,
                         help='GPU ID (default: %(default)s).')
+    parser.add_argument('--nstreams', dest='nstreams', type=int, default=2,
+                        help='Number of cuda streams (default: %(default)s).')
+    parser.add_argument('--usemmap', dest='usemmap', type=int, default=1,
+                        help='Whether to use memory map for loading image files (default: %(default)s).')
+    parser.add_argument('--mmapsize', dest='mmapsize', type=int, default=8,
+                        help='The memory map buffer size in GB (default: %(default)s).')
+
+    # specify a starting pixel of the reference image, -1 to auto compute
+    parser.add_argument('--startpixelac', dest='startpixelac', type=int, default=-1,
+                        help='Starting Pixel across (default: %(default)s).')
+
+    parser.add_argument('--startpixeldw', dest='startpixeldw', type=int, default=-1,
+                        help='Starting Pixel down (default: %(default)s).')
+
+    parser.add_argument('--algorithm', dest='algorithm', type=int, default=0,
+                        help='Cross-correlation algorithm 0=frequency 1=time (default: %(default)s).')
+
 
     return parser
 
@@ -138,7 +159,7 @@ def estimateOffsetField(reference, secondary, inps=None):
 
     objOffset = PyCuAmpcor()
 
-    objOffset.algorithm = 0
+    objOffset.algorithm = inps.algorithm
     objOffset.deviceID = inps.gpuid  # -1:let system find the best GPU
     objOffset.nStreams = 2 #cudaStreams
     objOffset.derampMethod = inps.deramp
@@ -176,12 +197,16 @@ def estimateOffsetField(reference, secondary, inps=None):
     print('half search range: {} by {}'.format(inps.srchgt, inps.srcwidth))
 
     # starting pixel
+    if (inps.startpixeldw != -1):
+        objOffset.referenceStartPixelDownStatic = inps.startpixeldw
+    else:
+        objOffset.referenceStartPixelDownStatic = inps.margin
+    if (inps.startpixelac != -1):
+        objOffset.referenceStartPixelAcrossStatic = inps.startpixelac
+    else:
+        objOffset.referenceStartPixelAcrossStatic = inps.margin
 
-    objOffset.referenceStartPixelDownStatic = inps.margin
-    objOffset.referenceStartPixelAcrossStatic = inps.margin
- 
     # skip size
-    
     objOffset.skipSampleDown = inps.skiphgt
     objOffset.skipSampleAcross = inps.skipwidth
     print('search step: {} by {}'.format(inps.skiphgt, inps.skipwidth))
@@ -191,13 +216,14 @@ def estimateOffsetField(reference, secondary, inps=None):
     print('raw data oversampling factor:', inps.raw_oversample)
 
     # correlation surface
+    objOffset.corrStatWindowSize = inps.corr_stat_win_size
     if inps.corr_win_size == -1:
         corr_win_size_orig = min(inps.srchgt, inps.srcwidth) * inps.raw_oversample + 1
         inps.corr_win_size = np.power(2, int(np.log2(corr_win_size_orig)))
         objOffset.corrSurfaceZoomInWindow = inps.corr_win_size
         print('correlation surface zoom-in window size:', inps.corr_win_size)
 
-    objOffset.corrSufaceOverSamplingMethod = 0
+    objOffset.corrSufaceOverSamplingMethod = inps.corr_oversamplemethod
     objOffset.corrSurfaceOverSamplingFactor = inps.corr_oversample
     print('correlation surface oversampling factor:', inps.corr_oversample)
 
@@ -225,8 +251,8 @@ def estimateOffsetField(reference, secondary, inps=None):
     # generic control
     objOffset.numberWindowDownInChunk = inps.numWinDownInChunk
     objOffset.numberWindowAcrossInChunk = inps.numWinAcrossInChunk
-    objOffset.useMmap = 0
-    objOffset.mmapSize = 8
+    objOffset.useMmap = inps.usemmap
+    objOffset.mmapSize = inps.mmapsize
     objOffset.setupParams()
 
     ## Set Gross Offset ###
