@@ -44,14 +44,6 @@ void cuAmpcorController::runAmpcor() {
     covImageRun = new cuArrays<float3>(nWindowsDownRun, nWindowsAcrossRun);
     covImageRun->allocate();
 
-    // intImage 1 and floatImage 1 are added for debugging issues
-    // debugging matrices for keeping the summation and valid count of correlation surface stats
-    corrValidCountImage = new cuArrays<int>(nWindowsDownRun, nWindowsAcrossRun);
-    corrValidCountImage->allocate();
-
-    corrSumImage = new cuArrays<float>(nWindowsDownRun, nWindowsAcrossRun);
-    corrSumImage->allocate();
-
     // Offsetfields.
     offsetImage = new cuArrays<float2>(param->numberWindowDown, param->numberWindowAcross);
     offsetImage->allocate();
@@ -70,7 +62,7 @@ void cuAmpcorController::runAmpcor() {
     {
         cudaStreamCreate(&streams[ist]);
         chunk[ist]= new cuAmpcorChunk(param, referenceImage, secondaryImage, offsetImageRun, snrImageRun, covImageRun,
-            corrValidCountImage, corrSumImage, streams[ist]);
+            streams[ist]);
 
     }
 
@@ -107,10 +99,6 @@ void cuAmpcorController::runAmpcor() {
     snrImage->outputToFile(param->snrImageName, streams[0]);
     covImage->outputToFile(param->covImageName, streams[0]);
 
-#ifndef NDEBUG
-    // Output debugging arrays.
-    corrValidCountImage->outputToFile("i_corrValidCount", streams[0]);
-    corrSumImage->outputToFile("r_corrSum", streams[0]);
 
     outputGrossOffsets();
 
@@ -118,9 +106,6 @@ void cuAmpcorController::runAmpcor() {
     delete offsetImage;
     delete snrImage;
     delete covImage;
-
-    delete corrValidCountImage;
-    delete corrSumImage;
 
     delete offsetImageRun;
     delete snrImageRun;

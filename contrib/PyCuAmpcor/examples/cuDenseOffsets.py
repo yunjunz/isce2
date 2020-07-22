@@ -78,7 +78,7 @@ def createParser():
 
     corr = parser.add_argument_group('Correlation surface')
     corr.add_argument('--corr-stat-size', type=int, dest='corr_stat_win_size', default=21,
-                      help='Zoom-in window size of the correlation surface for statistics(snr/cov) (default: %(default)s).'))
+                      help='Zoom-in window size of the correlation surface for statistics(snr/cov) (default: %(default)s).')
     corr.add_argument('--corr-win-size', type=int, dest='corr_win_size', default=-1,
                       help='Zoom-in window size of the correlation surface for oversampling (default: %(default)s).')
     corr.add_argument('--corr-osf', '--oo', '--corr-over-samp-factor', type=int, dest='corr_oversample', default=32,
@@ -117,12 +117,8 @@ def createParser():
     parser.add_argument('--startpixeldw', dest='startpixeldw', type=int, default=-1,
                         help='Starting Pixel down (default: %(default)s).')
 
-    parser.add_argument('--algorithm', dest='algorithm', type=int, default=0,
-                        help='Cross-correlation algorithm 0=frequency 1=time (default: %(default)s).')
-
-
-    parser.add_argument('-alg', '--algorithm', type=int, default=0
-       , help='algorithm to use (0 = frequency, 1 = spatial)')
+    parser.add_argument('-alg', '--algorithm', dest='algorithm', type=int, default=0,
+                        help='algorithm to use (0 = frequency, 1 = spatial) (default: %(default)s).')
 
     return parser
 

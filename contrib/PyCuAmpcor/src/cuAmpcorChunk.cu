@@ -77,6 +77,12 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
     // Summation of correlation and data point values
     cuArraysSumCorr(r_corrBatchRawZoomIn, i_corrBatchZoomInValid, r_corrBatchSum, i_corrBatchValidCount, stream);
 
+#ifdef CUAMPCOR_DEBUG
+    i_corrBatchZoomInValid->outputToFile("i_corrBatchZoomInValid", stream);
+    r_corrBatchSum->outputToFile("r_corrBatchSum", stream);
+    // snr and cov will be outputted anyway
+#endif
+
     // SNR
     cuEstimateSnr(r_corrBatchSum, i_corrBatchValidCount, r_maxval, r_snrValue, stream);
 
@@ -216,11 +222,6 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
     // Do insertion.
     // Offsetfields.
     cuArraysCopyInsert(offsetFinal, offsetImage, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
-
-#ifndef NDEBUG
-    // Debugging matrix.
-    cuArraysCopyInsert(r_corrBatchSum, corrSumImage, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
-    cuArraysCopyInsert(i_corrBatchValidCount, corrValidCountImage, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
 
     // Old: save max correlation coefficients.
     //cuArraysCopyInsert(corrMaxValue, snrImage, idxDown_*param->numberWindowDownInChunk, idxAcross_*param->numberWindowAcrossInChunk,stream);
@@ -391,7 +392,7 @@ void cuAmpcorChunk::loadSecondaryChunk()
 
 cuAmpcorChunk::cuAmpcorChunk(cuAmpcorParameter *param_, GDALImage *reference_, GDALImage *secondary_,
     cuArrays<float2> *offsetImage_, cuArrays<float> *snrImage_, cuArrays<float3> *covImage_,
-    cuArrays<int> *corrValidCountImage_, cuArrays<float> *corrSumImage_, cudaStream_t stream_)
+    cudaStream_t stream_)
 
 {
     param = param_;
@@ -400,9 +401,6 @@ cuAmpcorChunk::cuAmpcorChunk(cuAmpcorParameter *param_, GDALImage *reference_, G
     offsetImage = offsetImage_;
     snrImage = snrImage_;
     covImage = covImage_;
-
-    corrValidCountImage = corrValidCountImage_;
-    corrSumImage = corrSumImage_;
 
     stream = stream_;
 
