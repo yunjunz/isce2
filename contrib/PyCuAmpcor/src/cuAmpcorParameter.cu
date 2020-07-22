@@ -74,8 +74,6 @@ void cuAmpcorParameter::setupParameters()
     // Size to extract the resampled correlation surface for oversampling
     zoomWindowSize *= rawDataOversamplingFactor; //8 * 2
     halfZoomWindowSizeRaw = zoomWindowSize/(2*rawDataOversamplingFactor); // 8*2/(2*2) = 4
-    corrRawZoomInHeight = zoomWindowSize + 1;
-    corrRawZoomInWidth  = zoomWindowSize + 1;
 
     windowSizeWidth = windowSizeWidthRaw*rawDataOversamplingFactor;  //
     windowSizeHeight = windowSizeHeightRaw*rawDataOversamplingFactor;

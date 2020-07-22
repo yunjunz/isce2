@@ -185,9 +185,6 @@ def estimateOffsetField(reference, secondary, inps=None):
     print("offset field length: ",objOffset.numberWindowDown)
     print("offset field width: ",objOffset.numberWindowAcross)
 
-    gross_offset_down   = inps.azshift
-    gross_offset_across = inps.rgshift
-    objOffset.setConstantGrossOffset(gross_offset_down, gross_offset_across)
 
     # window size
     objOffset.windowSizeHeight = inps.winhgt
@@ -263,7 +260,9 @@ def estimateOffsetField(reference, secondary, inps=None):
         print("Set constant grossOffset")
         print("By default, the gross offsets are zero")
         print("You can override the default values here")
-        objOffset.setConstantGrossOffset(0, 0)
+        gross_offset_down = inps.azshift
+        gross_offset_across = inps.rgshift
+        objOffset.setConstantGrossOffset(gross_offset_down, gross_offset_across)
 
     else:
         print("Set varying grossOffset")
