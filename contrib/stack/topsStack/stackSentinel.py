@@ -20,7 +20,7 @@ mpl_logger.setLevel(logging.WARNING)
 import isce
 import isceobj
 from isceobj.Sensor.TOPS.Sentinel1 import Sentinel1
-from Stack import config, run, sentinelSLC
+from topsStack.Stack import config, run, sentinelSLC
 
 
 helpstr= '''
@@ -779,4 +779,4 @@ def main(iargs=None):
 if __name__ == "__main__":
 
   # Main engine
-  main()
+  main(sys.argv[1:])
