@@ -2,7 +2,7 @@
 
 #Author: Heresh Fattahi
 
-import os, imp, sys, glob
+import os, sys, glob
 import argparse
 import configparser
 import datetime
@@ -18,7 +18,7 @@ mpl_logger.setLevel(logging.WARNING)
 import isce
 import isceobj
 from mroipac.baseline.Baseline import Baseline
-from Stack import config, run, selectPairs
+from stripmapStack.Stack import config, run, selectPairs
 
 
 filtStrength = '0.8'
@@ -360,6 +360,6 @@ def main(iargs=None):
 if __name__ == "__main__":
        
   # Main engine  
-  main()
+  main(sys.argv[1:])
        
 
