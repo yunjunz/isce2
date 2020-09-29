@@ -4,19 +4,20 @@
 
 
 import os
+import time
 import argparse
 import numpy as np
 
 import isce
 import isceobj
 from isceobj.Util.decorators import use_api
+from isceobj.Util.ImageUtil import ImageLib as IML
 from contrib.PyCuAmpcor.PyCuAmpcor import PyCuAmpcor
 
 
 EXAMPLE = '''example
   cuDenseOffsets.py -m ./merged/SLC/20151120/20151120.slc.full -s ./merged/SLC/20151214/20151214.slc.full
-      --referencexml ./reference/IW1.xml --outprefix ./merged/offsets/20151120_20151214/offset
-      --ww 256 --wh 256 --oo 32 --kw 300 --kh 100 --nwac 100 --nwdc 1 --sw 8 --sh 8 --gpuid 2
+  cuDenseOffsets.py -m ./merged/SLC/20151120/20151120.slc.full -s ./merged/SLC/20151214/20151214.slc.full -x ./reference/IW1.xml --outprefix ./merged/offsets/20151120_20151214/offset --ww 256 --wh 256 --oo 32 --kw 300 --kh 100 --nwac 100 --nwdc 1 --sw 8 --sh 8 --gpuid 2
 '''
 
 
@@ -26,7 +27,7 @@ def createParser():
     '''
 
 
-    parser = argparse.ArgumentParser(description='Generate offset field between two Sentinel slc',
+    parser = argparse.ArgumentParser(description='Generate offset field between two SLCs',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog=EXAMPLE)
     parser.add_argument('-m','--reference', type=str, dest='reference', required=True,
@@ -119,6 +120,13 @@ def cmdLineParse(iargs = None):
 @use_api
 def estimateOffsetField(reference, secondary, inps=None):
 
+    # update file path in xml file
+    for fname in [reference, secondary]:
+        fname = os.path.abspath(fname)
+        img = IML.loadImage(fname)[0]
+        img.filename = fname
+        img.setAccessMode('READ')
+        img.renderHdr()
 
     ###Loading the secondary image object
     sim = isceobj.createSlcImage()
@@ -143,7 +151,6 @@ def estimateOffsetField(reference, secondary, inps=None):
     objOffset.nStreams = 2 #cudaStreams
     objOffset.derampMethod = inps.deramp
     print('deramp method (0 for magnitude, 1 for complex): ', objOffset.derampMethod)
-
 
     objOffset.referenceImageName = reference+'.vrt'
     objOffset.referenceImageHeight = length
@@ -197,27 +204,35 @@ def estimateOffsetField(reference, secondary, inps=None):
         objOffset.corrSurfaceZoomInWindow = inps.corr_win_size
         print('correlation surface zoom-in window size:', inps.corr_win_size)
 
+    # oversampling method: 0 for fft, 1 for sinc
     objOffset.corrSufaceOverSamplingMethod = 0
     objOffset.corrSurfaceOverSamplingFactor = inps.corr_oversample
     print('correlation surface oversampling factor:', inps.corr_oversample)
 
     # output filenames
-    objOffset.offsetImageName = str(inps.outprefix) + str(inps.outsuffix) + '.bip'
-    objOffset.grossOffsetImageName = str(inps.outprefix) + str(inps.outsuffix) + '_gross.bip'
-    objOffset.snrImageName = str(inps.outprefix) + str(inps.outsuffix) + '_snr.bip'
-    objOffset.covImageName = str(inps.outprefix) + str(inps.outsuffix) + '_cov.bip'
-    print("offsetfield: ",objOffset.offsetImageName)
-    print("gross offsetfield: ",objOffset.grossOffsetImageName)
-    print("snr: ",objOffset.snrImageName)
-    print("cov: ",objOffset.covImageName)
+    fbase = '{}{}'.format(inps.outprefix, inps.outsuffix)
+    objOffset.offsetImageName = fbase + '.bip'
+    objOffset.grossOffsetImageName = fbase + '_gross.bip'
+    objOffset.snrImageName = fbase + '_snr.bip'
+    objOffset.covImageName = fbase + '_cov.bip'
+    print("offsetfield: ", objOffset.offsetImageName)
+    print("gross offsetfield: ", objOffset.grossOffsetImageName)
+    print("snr: ", objOffset.snrImageName)
+    print("cov: ", objOffset.covImageName)
 
-    offsetImageName = objOffset.offsetImageName.decode('utf8')
-    grossOffsetImageName = objOffset.grossOffsetImageName.decode('utf8')
-    snrImageName = objOffset.snrImageName.decode('utf8')
-    covImageName = objOffset.covImageName.decode('utf8')
+    try:
+        offsetImageName = objOffset.offsetImageName.decode('utf8')
+        grossOffsetImageName = objOffset.grossOffsetImageName.decode('utf8')
+        snrImageName = objOffset.snrImageName.decode('utf8')
+        covImageName = objOffset.covImageName.decode('utf8')
+    except:
+        offsetImageName = objOffset.offsetImageName
+        grossOffsetImageName = objOffset.grossOffsetImageName
+        snrImageName = objOffset.snrImageName
+        covImageName = objOffset.covImageName
 
     print(offsetImageName)
-    print(inps.redo)
+    print('redo: ', inps.redo)
     if os.path.exists(offsetImageName) and not inps.redo:
         print('offsetfield file exists')
         return 0
@@ -303,14 +318,17 @@ def estimateOffsetField(reference, secondary, inps=None):
 
 
 def main(iargs=None):
-
     inps = cmdLineParse(iargs)
-    outDir = os.path.dirname(inps.outprefix)
-    print(inps.outprefix)
+    start_time = time.time()
 
+    print(inps.outprefix)
+    outDir = os.path.dirname(inps.outprefix)
     os.makedirs(outDir, exist_ok=True)
 
     estimateOffsetField(inps.reference, inps.secondary, inps)
+
+    m, s = divmod(time.time() - start_time, 60)
+    print('time used: {:02.0f} mins {:02.1f} secs.\n'.format(m, s))
     return
 
 
