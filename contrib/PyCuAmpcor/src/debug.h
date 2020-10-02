@@ -7,10 +7,11 @@
 
 #ifndef NDEBUG
 #define CUAMPCOR_DEBUG
-#define CUDA_ERROR_CHECK
 #define debugmsg(msg) fprintf(stderr, msg)
 #else
 #define debugmsg(msg)
 #endif //NDEBUG
+
+#define CUDA_ERROR_CHECK
 
 #endif //__DEBUG_H
