@@ -70,8 +70,8 @@ def createParser():
             help='File name of the azimuth offsets after rubber sheeting (default: %(default)s).')
     parser.add_argument('-R', '--output_range_offset', dest='outRange', type=str, default='filtRange.off',
             help='File name of the range offsets after rubber sheeting (default: %(default)s).')
-    parser.add_argument('-o', '--output_directory', dest='outDir', type=str, default='./',
-            help='Output directory (default: %(default)s).')
+    parser.add_argument('-o', '--output_directory', dest='outDir', type=str,
+            help='Output directory (default: same as the input denseOffset file).')
 
     # plot
     plot = parser.add_argument_group('plot')
@@ -85,12 +85,20 @@ def createParser():
                       help='figure size in inch (default: %(default)s).')
     plot.add_argument('--save', dest='fig_name', type=str, default=None,
                       help='save figure as file')
+    plot.add_argument('--nodisplay', dest='disp_fig', action='store_false',
+                      help='do not display figure')
 
     return parser
 
-def cmdLineParse(iargs = None):
+def cmdLineParse(iargs=None):
     parser = createParser()
-    return parser.parse_args(args=iargs)
+    inps = parser.parse_args(args=iargs)
+
+    # Backend setting
+    if not inps.disp_fig:
+        plt.switch_backend('Agg')
+
+    return inps
 
 
 def read(file, processor='ISCE', bands=None, dataType=None):
@@ -248,14 +256,18 @@ def plot_mask_and_filtering(az_list, rg_list, inps=None):
 
     # plot SNR
     kwargs = dict(vmin=inps.vlim_snr[0], vmax=inps.vlim_snr[1], cmap='RdBu', interpolation='nearest')
+    snr[snr == 0] = np.nan
     im0 = axs[0,0].imshow(snr, **kwargs)
     im0 = axs[1,0].imshow(snr, **kwargs)
     axs[0,0].set_title('SNR', fontsize=12)
     print('SNR data range: [{}, {}]'.format(np.nanmin(snr), np.nanmax(snr)))
 
     # label
-    axs[0,0].set_ylabel('azimuth', fontsize=12)
-    axs[1,0].set_ylabel('range', fontsize=12)
+    for ax in axs.flatten():
+        ax.yaxis.set_label_position('right')
+        #ax.yaxis.tick_right()
+    axs[0,-1].set_ylabel('azimuth', fontsize=12)
+    axs[1,-1].set_ylabel('range', fontsize=12)
 
     # plot offset
     kwargs = dict(vmin=inps.vlim[0], vmax=inps.vlim[1], cmap='jet', interpolation='nearest')
@@ -282,9 +294,15 @@ def plot_mask_and_filtering(az_list, rg_list, inps=None):
     # save figure to file
     if inps.fig_name is not None:
         inps.fig_name = os.path.abspath(inps.fig_name)
+        os.makedirs(os.path.dirname(inps.fig_name), exist_ok=True)
         print('save figure to file {}'.format(inps.fig_name))
         plt.savefig(inps.fig_name, bbox_inches='tight', transparent=True, dpi=300)
-    plt.show()
+
+    if inps.disp_fig:
+        plt.show()
+    else:
+        plt.close()
+
     return
 
 
@@ -292,6 +310,8 @@ def main(iargs=None):
 
     inps = cmdLineParse(iargs)
 
+    if not inps.outDir:
+        inps.outDir = os.path.dirname(inps.denseOffset)
     os.makedirs(inps.outDir, exist_ok=True)
 
     #######################
@@ -306,7 +326,7 @@ def main(iargs=None):
     rg_list = mask_filter(inps, band=[2], outName=inps.outRange)
 
     # plot result
-    if inps.plot:
+    if inps.plot or inps.fig_name is not None:
         plot_mask_and_filtering(az_list, rg_list, inps)
     return
 
