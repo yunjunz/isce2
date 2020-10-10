@@ -91,8 +91,9 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
 
 #ifdef CUAMPCOR_DEBUG
     // debug: output the intermediate results
-    //std::cout << "Done with first search based on raw images, with max location on correlaton surface\n";
-    //offsetInit->debuginfo(stream);
+
+    // std::cout << "Offset from first search:\n";
+    // offsetInit->debuginfo(stream);
     // dump the results
     offsetInit->outputToFile("i_offsetInit", stream);
     r_maxval->outputToFile("r_maxval", stream);
@@ -102,9 +103,10 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
 #endif
 
     // Using the approximate estimation to adjust secondary image (half search window size becomes only 4 pixels)
-    //offsetInit->debuginfo(stream);
+    // offsetInit->debuginfo(stream);
     // determine the starting pixel to extract secondary images around the max location
     cuDetermineSecondaryExtractOffset(offsetInit,
+        maxLocShift,
         param->halfSearchRangeDownRaw, // old range
         param->halfSearchRangeAcrossRaw,
         param->halfZoomWindowSizeRaw,  // new range
@@ -112,9 +114,12 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
         stream);
 
 #ifdef CUAMPCOR_DEBUG
-//    std::cout << "max location adjusted if close to boundary\n";
-//    offsetInit->debuginfo(stream);
+    // std::cout << "max location adjusted if close to boundary\n";
+    // offsetInit->debuginfo(stream);
+    // std::cout << "and the shift of the center\n";
+    // maxLocShift->debuginfo(stream);
     offsetInit->outputToFile("i_offsetInitAdjusted", stream);
+    maxLocShift->outputToFile("i_maxLocShift", stream);
 #endif
 
     // oversample reference
@@ -158,7 +163,7 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
     }
 
 #ifdef CUAMPCOR_DEBUG
-    // dump the oversampled correlation surface (unnormalized)
+    // dump the oversampled correlation surface (un-normalized)
     r_corrBatchZoomIn->outputToFile("r_corrBatchZoomInUnNorm", stream);
 #endif
 
@@ -185,7 +190,11 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
 
     // oversample the correlation surface
     if(param->oversamplingMethod) {
-        corrSincOverSampler->execute(r_corrBatchZoomInAdjust, r_corrBatchZoomInOverSampled);
+        // sinc interpolator only computes (-i_sincwindow, i_sincwindow)*oversamplingfactor
+        // we need the max loc as the center if shifted
+        corrSincOverSampler->execute(r_corrBatchZoomInAdjust, r_corrBatchZoomInOverSampled,
+            maxLocShift, param->oversamplingFactor*param->rawDataOversamplingFactor
+            );
     }
     else {
         corrOverSampler->execute(r_corrBatchZoomInAdjust, r_corrBatchZoomInOverSampled);
@@ -206,18 +215,18 @@ void cuAmpcorChunk::run(int idxDown_, int idxAcross_)
 #endif
 
     // determine the final offset from non-oversampled (pixel) and oversampled (sub-pixel)
+    // = (Init-HalfsearchRange) + ZoomIn/(2*ovs)
     cuSubPixelOffset(offsetInit, offsetZoomIn, offsetFinal,
         param->oversamplingFactor, param->rawDataOversamplingFactor,
         param->halfSearchRangeDownRaw, param->halfSearchRangeAcrossRaw,
         param->halfZoomWindowSizeRaw, param->halfZoomWindowSizeRaw,
         stream);
 
-//#ifdef CUAMPCOR_DEBUG
-//    std::cout << "Offsets (Init, ZoomIned, Final)\n";
-//    offsetInit->debuginfo(stream);
-//    offsetZoomIn->debuginfo(stream);
-//    offsetFinal->debuginfo(stream);
-//#endif
+// #ifdef CUAMPCOR_DEBUG
+    // std::cout << "Offsets: Oversampled and Final)\n";
+    // offsetZoomIn->debuginfo(stream);
+    // offsetFinal->debuginfo(stream);
+// #endif
 
     // Do insertion.
     // Offsetfields.
@@ -510,6 +519,9 @@ cuAmpcorChunk::cuAmpcorChunk(cuAmpcorParameter *param_, GDALImage *reference_, G
     offsetFinal = new cuArrays<float2> (param->numberWindowDownInChunk, param->numberWindowAcrossInChunk);
     offsetFinal->allocate();
 
+    maxLocShift = new cuArrays<int2> (param->numberWindowDownInChunk, param->numberWindowAcrossInChunk);
+    maxLocShift->allocate();
+
     corrMaxValue = new cuArrays<float> (param->numberWindowDownInChunk, param->numberWindowAcrossInChunk);
     corrMaxValue->allocate();
 
@@ -563,7 +575,7 @@ cuAmpcorChunk::cuAmpcorChunk(cuAmpcorParameter *param_, GDALImage *reference_, G
     // end of new arrays
 
     if(param->oversamplingMethod) {
-        corrSincOverSampler = new cuSincOverSamplerR2R(param->zoomWindowSize, param->oversamplingFactor, stream);
+        corrSincOverSampler = new cuSincOverSamplerR2R(param->oversamplingFactor, stream);
     }
     else {
         corrOverSampler= new cuOverSamplerR2R(param->zoomWindowSize, param->zoomWindowSize,

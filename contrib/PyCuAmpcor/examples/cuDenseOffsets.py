@@ -160,7 +160,7 @@ def estimateOffsetField(reference, secondary, inps=None):
 
     objOffset.algorithm = inps.algorithm
     objOffset.deviceID = inps.gpuid  # -1:let system find the best GPU
-    objOffset.nStreams = 2 #cudaStreams
+    objOffset.nStreams = inps.nstreams #cudaStreams
     objOffset.derampMethod = inps.deramp
     print('deramp method (0 for magnitude, 1 for complex): ', objOffset.derampMethod)
 
