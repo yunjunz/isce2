@@ -32,7 +32,7 @@ cuAmpcorParameter::cuAmpcorParameter()
     skipSampleAcrossRaw = 64;
     skipSampleDownRaw = 64;
     rawDataOversamplingFactor = 2;
-    zoomWindowSize = 8;
+    zoomWindowSize = 16;
     oversamplingFactor = 16;
     oversamplingMethod = 0;
 
@@ -72,7 +72,14 @@ void cuAmpcorParameter::setupParameters()
     corrRawZoomInWidth = std::min(corrStatWindowSize, 2*halfSearchRangeAcrossRaw+1);
 
     // Size to extract the resampled correlation surface for oversampling
-    zoomWindowSize *= rawDataOversamplingFactor; //8 * 2
+    // users should use 16 for zoomWindowSize, no need to multiply by 2
+    // zoomWindowSize *= rawDataOversamplingFactor; //8 * 2
+    // to check the search range
+    int corrSurfaceActualSize =
+        std::min(halfSearchRangeAcrossRaw, halfSearchRangeDownRaw)*
+        2*rawDataOversamplingFactor;
+    zoomWindowSize = std::min(zoomWindowSize, corrSurfaceActualSize);
+
     halfZoomWindowSizeRaw = zoomWindowSize/(2*rawDataOversamplingFactor); // 8*2/(2*2) = 4
 
     windowSizeWidth = windowSizeWidthRaw*rawDataOversamplingFactor;  //

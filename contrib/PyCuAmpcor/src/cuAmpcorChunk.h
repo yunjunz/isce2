@@ -57,6 +57,7 @@ private:
 	cuArrays<int2> *offsetInit;
 	cuArrays<int2> *offsetZoomIn;
 	cuArrays<float2> *offsetFinal;
+	cuArrays<int2> *maxLocShift; //record the maxloc from the extract center
     cuArrays<float> *corrMaxValue;
 
 

@@ -267,48 +267,67 @@ void cuDetermineInterpZone(cuArrays<int2> *maxloc, cuArrays<int2> *zoomInOffset,
 }
 
 
-static inline __device__ int dev_adjustOffset(const int oldRange, const int newRange, const int maxloc)
+static inline __device__ int2 dev_adjustOffset(
+    const int oldRange, const int newRange, const int maxloc)
 {
-    // shift the max location by -newRange
+    // determine the starting point around the maxloc
+    // oldRange is the half search window size, e.g., = 32
+    // newRange is the half extract size, e.g., = 4
+    // maxloc is in range [0, 64]
+    // we want to extract \pm 4 centered at maxloc
+    // Examples:
+    // 1. maxloc = 40: we set start=maxloc-newRange=36, and extract [36,44), shift=0
+    // 2. maxloc = 2, start=-2: we set start=0, shift=-2,
+    //   (shift means the max is -2 from the extracted center 4)
+    // 3. maxloc =64, start=60: set start=56, shift = 4
+    //   (shift means the max is 4 from the extracted center 60).
+
+    // shift the max location by -newRange to find the start
     int start = maxloc - newRange;
+    // if start is within the range, the max location will be in the center
+    int shift = 0;
+    // right boundary
+    int rbound = 2*(oldRange-newRange);
     if(start<0)     // if exceeding the limit on the left
     {
+        // set start at 0 and record the shift of center
+        shift = -start;
         start = 0;
     }
-    else if(start > 2*(oldRange-newRange) ) // if exceeding the limit on the right
+    else if(start > rbound ) // if exceeding the limit on the right
     {
-        start = 2*(oldRange-newRange);
+        //
+        shift = start-rbound;
+        start = rbound;
     }
-    return start;
-    // example:
-    // oldRange is the half search window size = 32
-    // newRange is the half extract size = 4
-    // maxloc ranges [0, 64]
-    // start = maxloc - 4
-    // if start<0, set start =0,
-    // if start > 56, set start = 56
+    return make_int2(start, shift);
 }
 
-__global__ void cudaKernel_determineSecondaryExtractOffset(int2 * maxloc,
+__global__ void cudaKernel_determineSecondaryExtractOffset(int2 * maxLoc, int2 *shift,
     const size_t nImages, int xOldRange, int yOldRange, int xNewRange, int yNewRange)
 {
     int imageIndex = threadIdx.x + blockDim.x *blockIdx.x; //image index
 	if (imageIndex < nImages)
 	{
-        maxloc[imageIndex].x = dev_adjustOffset(xOldRange, xNewRange, maxloc[imageIndex].x);
-        maxloc[imageIndex].y = dev_adjustOffset(yOldRange, yNewRange, maxloc[imageIndex].y);
+	    // get the starting pixel (stored back to maxloc) and shift
+        int2 result = dev_adjustOffset(xOldRange, xNewRange, maxLoc[imageIndex].x);
+        maxLoc[imageIndex].x = result.x;
+        shift[imageIndex].x = result.y;
+        result = dev_adjustOffset(yOldRange, yNewRange, maxLoc[imageIndex].y);
+        maxLoc[imageIndex].y = result.x;
+        shift[imageIndex].y = result.y;
 	}
 }
 
 ///@param[in] xOldRange, yOldRange are (half) search ranges in first step
 ///@param[in] x
-void cuDetermineSecondaryExtractOffset(cuArrays<int2> *maxLoc,
+void cuDetermineSecondaryExtractOffset(cuArrays<int2> *maxLoc, cuArrays<int2> *maxLocShift,
     int xOldRange, int yOldRange, int xNewRange, int yNewRange, cudaStream_t stream)
 {
 	int threadsperblock=NTHREADS;
 	int blockspergrid=IDIVUP(maxLoc->size, threadsperblock);
 	cudaKernel_determineSecondaryExtractOffset<<<blockspergrid, threadsperblock, 0, stream>>>
-	    (maxLoc->devData, maxLoc->size, xOldRange, yOldRange, xNewRange, yNewRange);
+	    (maxLoc->devData, maxLocShift->devData, maxLoc->size, xOldRange, yOldRange, xNewRange, yNewRange);
 }
 
 
