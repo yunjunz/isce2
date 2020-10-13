@@ -248,14 +248,18 @@ def plot_mask_and_filtering(az_list, rg_list, inps=None):
 
     # plot SNR
     kwargs = dict(vmin=inps.vlim_snr[0], vmax=inps.vlim_snr[1], cmap='RdBu', interpolation='nearest')
+    snr[snr == 0] = np.nan
     im0 = axs[0,0].imshow(snr, **kwargs)
     im0 = axs[1,0].imshow(snr, **kwargs)
     axs[0,0].set_title('SNR', fontsize=12)
     print('SNR data range: [{}, {}]'.format(np.nanmin(snr), np.nanmax(snr)))
 
     # label
-    axs[0,0].set_ylabel('azimuth', fontsize=12)
-    axs[1,0].set_ylabel('range', fontsize=12)
+    for ax in axs.flatten():
+        ax.yaxis.set_label_position('right')
+        #ax.yaxis.tick_right()
+    axs[0,-1].set_ylabel('azimuth', fontsize=12)
+    axs[1,-1].set_ylabel('range', fontsize=12)
 
     # plot offset
     kwargs = dict(vmin=inps.vlim[0], vmax=inps.vlim[1], cmap='jet', interpolation='nearest')
@@ -282,6 +286,7 @@ def plot_mask_and_filtering(az_list, rg_list, inps=None):
     # save figure to file
     if inps.fig_name is not None:
         inps.fig_name = os.path.abspath(inps.fig_name)
+        os.makedirs(os.path.dirname(inps.fig_name), exist_ok=True)
         print('save figure to file {}'.format(inps.fig_name))
         plt.savefig(inps.fig_name, bbox_inches='tight', transparent=True, dpi=300)
     plt.show()
@@ -306,7 +311,7 @@ def main(iargs=None):
     rg_list = mask_filter(inps, band=[2], outName=inps.outRange)
 
     # plot result
-    if inps.plot:
+    if inps.plot or inps.fig_name is not None:
         plot_mask_and_filtering(az_list, rg_list, inps)
     return
 
