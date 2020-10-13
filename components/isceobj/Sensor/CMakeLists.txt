@@ -7,7 +7,6 @@ isce2_add_cdll(asa_im_decode src/asa_im_decode/asa_im_decode.c)
 set(installfiles
     asa_im_decode
     alos
-    cosar
     __init__.py
     ALOS.py
     ALOS2.py
@@ -92,16 +91,5 @@ target_include_directories(alos PUBLIC
     src/ALOS_pre_process
     )
 target_link_libraries(alos PUBLIC isce2::DataAccessorLib)
-
-Python_add_library(cosar MODULE
-    bindings/cosarmodule.cpp
-    src/cosar/Header.cpp
-    src/cosar/Burst.cpp
-    src/cosar/Cosar.cpp
-    )
-target_include_directories(cosar PUBLIC
-    include
-    src/cosar
-    )
 
 InstallSameDir(${installfiles})

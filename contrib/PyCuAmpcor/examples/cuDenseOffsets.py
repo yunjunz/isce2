@@ -1,28 +1,22 @@
 #!/usr/bin/env python3
 
 # Author: Minyan Zhong, Lijun Zhu
-# Add geometry preparation, Zhang Yunjun, 07-Oct-2020
 
 
 import os
-import sys
-import time
 import argparse
 import numpy as np
 
 import isce
 import isceobj
 from isceobj.Util.decorators import use_api
-from isceobj.Util.ImageUtil import ImageLib as IML
 from contrib.PyCuAmpcor.PyCuAmpcor import PyCuAmpcor
 
 
 EXAMPLE = '''example
-  cuDenseOffsets.py -m ./SLC/20151120/20151120.slc.full -s ./SLC/20151214/20151214.slc.full
-  cuDenseOffsets.py -m ./SLC/20151120/20151120.slc.full -s ./SLC/20151214/20151214.slc.full --outprefix ./offsets/20151120_20151214/offset --ww 256 --wh 256 --oo 32 --kw 300 --kh 100 --nwac 100 --nwdc 1 --sw 8 --sh 8 --gpuid 2
-
-  # offset and its geometry
-  cuDenseOffsets.py -m ./SLC/20151120/20151120.slc.full -s ./SLC/20151214/20151214.slc.full --outprefix ./offsets/20151120_20151214/offset --ww 256 --wh 256 --oo 32 --kw 300 --kh 100 --nwac 100 --nwdc 1 --sw 8 --sh 8 --gpuid 2 --full-geom ./geom_reference --out-geom ./offset/geom_reference
+  cuDenseOffsets.py -m ./merged/SLC/20151120/20151120.slc.full -s ./merged/SLC/20151214/20151214.slc.full
+      --referencexml ./reference/IW1.xml --outprefix ./merged/offsets/20151120_20151214/offset
+      --ww 256 --wh 256 --oo 32 --kw 300 --kh 100 --nwac 100 --nwdc 1 --sw 8 --sh 8 --gpuid 2
 '''
 
 
@@ -32,7 +26,7 @@ def createParser():
     '''
 
 
-    parser = argparse.ArgumentParser(description='Generate offset field between two SLCs',
+    parser = argparse.ArgumentParser(description='Generate offset field between two Sentinel slc',
                                      formatter_class=argparse.RawTextHelpFormatter,
                                      epilog=EXAMPLE)
     parser.add_argument('-m','--reference', type=str, dest='reference', required=True,
@@ -92,12 +86,6 @@ def createParser():
     corr.add_argument('--corr-osm', '--corr-over-samp-method', type=int, dest='corr_oversamplemethod', default=0,
                       help = 'Oversampling method for the correlation surface 0=fft, 1=sinc (default: %(default)s).')
 
-    geom = parser.add_argument_group('Geometry', 'generate corresponding geometry datasets ')
-    geom.add_argument('--full-geom', dest='full_geometry_dir', type=str,
-                      help='(Input) Directory of geometry files in full resolution.')
-    geom.add_argument('--out-geom', dest='out_geometry_dir', type=str,
-                      help='(Output) Directory of geometry files corresponding to the offset field.')
-
     parser.add_argument('--nwa', type=int, dest='numWinAcross', default=-1,
                         help='Number of window across (default: %(default)s).')
     parser.add_argument('--nwd', type=int, dest='numWinDown', default=-1,
@@ -151,13 +139,6 @@ def cmdLineParse(iargs = None):
 @use_api
 def estimateOffsetField(reference, secondary, inps=None):
 
-    # update file path in xml file
-    for fname in [reference, secondary]:
-        fname = os.path.abspath(fname)
-        img = IML.loadImage(fname)[0]
-        img.filename = fname
-        img.setAccessMode('READ')
-        img.renderHdr()
 
     ###Loading the secondary image object
     sim = isceobj.createSlcImage()
@@ -182,6 +163,7 @@ def estimateOffsetField(reference, secondary, inps=None):
     objOffset.nStreams = 2 #cudaStreams
     objOffset.derampMethod = inps.deramp
     print('deramp method (0 for magnitude, 1 for complex): ', objOffset.derampMethod)
+
 
     objOffset.referenceImageName = reference+'.vrt'
     objOffset.referenceImageHeight = length
@@ -225,9 +207,6 @@ def estimateOffsetField(reference, secondary, inps=None):
         objOffset.referenceStartPixelAcrossStatic = inps.margin
 
     # skip size
-    objOffset.referenceStartPixelDownStatic = inps.margin
-    objOffset.referenceStartPixelAcrossStatic = inps.margin
-
     objOffset.skipSampleDown = inps.skiphgt
     objOffset.skipSampleAcross = inps.skipwidth
     print('search step: {} by {}'.format(inps.skiphgt, inps.skipwidth))
@@ -244,35 +223,27 @@ def estimateOffsetField(reference, secondary, inps=None):
         objOffset.corrSurfaceZoomInWindow = inps.corr_win_size
         print('correlation surface zoom-in window size:', inps.corr_win_size)
 
-    # oversampling method: 0 for fft, 1 for sinc
     objOffset.corrSufaceOverSamplingMethod = inps.corr_oversamplemethod
     objOffset.corrSurfaceOverSamplingFactor = inps.corr_oversample
     print('correlation surface oversampling factor:', inps.corr_oversample)
 
     # output filenames
-    fbase = '{}{}'.format(inps.outprefix, inps.outsuffix)
-    objOffset.offsetImageName = fbase + '.bip'
-    objOffset.grossOffsetImageName = fbase + '_gross.bip'
-    objOffset.snrImageName = fbase + '_snr.bip'
-    objOffset.covImageName = fbase + '_cov.bip'
-    print("offsetfield: ", objOffset.offsetImageName)
-    print("gross offsetfield: ", objOffset.grossOffsetImageName)
-    print("snr: ", objOffset.snrImageName)
-    print("cov: ", objOffset.covImageName)
+    objOffset.offsetImageName = str(inps.outprefix) + str(inps.outsuffix) + '.bip'
+    objOffset.grossOffsetImageName = str(inps.outprefix) + str(inps.outsuffix) + '_gross.bip'
+    objOffset.snrImageName = str(inps.outprefix) + str(inps.outsuffix) + '_snr.bip'
+    objOffset.covImageName = str(inps.outprefix) + str(inps.outsuffix) + '_cov.bip'
+    print("offsetfield: ",objOffset.offsetImageName)
+    print("gross offsetfield: ",objOffset.grossOffsetImageName)
+    print("snr: ",objOffset.snrImageName)
+    print("cov: ",objOffset.covImageName)
 
-    try:
-        offsetImageName = objOffset.offsetImageName.decode('utf8')
-        grossOffsetImageName = objOffset.grossOffsetImageName.decode('utf8')
-        snrImageName = objOffset.snrImageName.decode('utf8')
-        covImageName = objOffset.covImageName.decode('utf8')
-    except:
-        offsetImageName = objOffset.offsetImageName
-        grossOffsetImageName = objOffset.grossOffsetImageName
-        snrImageName = objOffset.snrImageName
-        covImageName = objOffset.covImageName
+    offsetImageName = objOffset.offsetImageName
+    grossOffsetImageName = objOffset.grossOffsetImageName
+    snrImageName = objOffset.snrImageName
+    covImageName = objOffset.covImageName
 
     print(offsetImageName)
-    print('redo: ', inps.redo)
+    print(inps.redo)
     if os.path.exists(offsetImageName) and not inps.redo:
         print('offsetfield file exists')
         return 0
@@ -359,88 +330,19 @@ def estimateOffsetField(reference, secondary, inps=None):
     return
 
 
-def prepareGeometry(full_dir, out_dir, match_win_len, match_win_wid, search_win_len, search_win_wid,
-                    step_len, step_wid, margin, fbases=['hgt','lat','lon','los','shadowMask','waterMask']):
-    """Generate multilooked geometry datasets in the same grid as the estimated offset field
-    from the full resolution geometry datasets.
-    """
-    from osgeo import gdal
-
-    print('-'*50)
-    print('generate the corresponding multi-looked geometry datasets using gdal ...')
-    in_files = [os.path.join(full_dir, '{}.rdr.full'.format(i)) for i in fbases]
-    in_files = [i for i in in_files if os.path.isfile(i)]
-    if len(in_files) == 0:
-        raise ValueError('No full resolution geometry file found in: {}'.format(full_dir))
-
-    fbases = [os.path.basename(i).split('.')[0] for i in in_files]
-    out_files = [os.path.join(out_dir, '{}.rdr'.format(i)) for i in fbases]
-    os.makedirs(out_dir, exist_ok=True)
-
-    for i in range(len(in_files)):
-        in_file = in_files[i]
-        out_file = out_files[i]
-
-        # input file size
-        ds = gdal.Open(in_file, gdal.GA_ReadOnly)
-        in_wid = ds.RasterXSize
-        in_len = ds.RasterYSize
-
-        # starting column/row number
-        sx = margin + search_win_wid + int(match_win_wid / 2)
-        sy = margin + search_win_len + int(match_win_len / 2)
-
-        out_wid = int((in_wid - sx * 2) / step_wid)
-        out_len = int((in_len - sy * 2) / step_len)
-        src_wid = out_wid * step_wid
-        src_len = out_len * step_len
-        src_win = [sx, sy, src_wid, src_len]
-        print('read {} from file: {}'.format(src_win, in_file))
-
-        # write binary data file
-        print('write file: {}'.format(out_file))
-        opts = gdal.TranslateOptions(format='ENVI',
-                                     width=out_wid,
-                                     height=out_len,
-                                     srcWin=src_win,
-                                     noData=0)
-        gdal.Translate(out_file, ds, options=opts)
-        ds = None
-
-        # write VRT file
-        print('write file: {}'.format(out_file+'.vrt'))
-        ds = gdal.Open(out_file, gdal.GA_ReadOnly)
-        gdal.Translate(out_file+'.vrt', ds, options=gdal.TranslateOptions(format='VRT'))
-        ds = None
-
-    return
-
-
 def main(iargs=None):
-    inps = cmdLineParse(iargs)
-    start_time = time.time()
 
-    print(inps.outprefix)
+    inps = cmdLineParse(iargs)
     outDir = os.path.dirname(inps.outprefix)
+    print(inps.outprefix)
+
     os.makedirs(outDir, exist_ok=True)
 
-    # estimate offset
     estimateOffsetField(inps.reference, inps.secondary, inps)
-
-    # generate geometry
-    if inps.full_geometry_dir and inps.out_geometry_dir:
-        prepareGeometry(inps.full_geometry_dir, inps.out_geometry_dir,
-                        match_win_len=inps.winhgt,
-                        match_win_wid=inps.winwidth,
-                        search_win_len=inps.srchgt,
-                        search_win_wid=inps.srcwidth,
-                        step_len=inps.skiphgt,
-                        step_wid=inps.skipwidth,
-                        margin=inps.margin)
-
-    m, s = divmod(time.time() - start_time, 60)
-    print('time used: {:02.0f} mins {:02.1f} secs.\n'.format(m, s))
     return
 
+
+
 if __name__ == '__main__':
-    main(sys.argv[1:])
+
+    main()
