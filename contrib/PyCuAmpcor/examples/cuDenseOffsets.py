@@ -230,7 +230,7 @@ def estimateOffsetField(reference, secondary, inps=None):
     objOffset.corrSurfaceZoomInWindow = inps.corr_win_size
     print('correlation surface zoom-in window size:', inps.corr_win_size)
 
-    objOffset.corrSufaceOverSamplingMethod = inps.corr_oversamplemethod
+    objOffset.corrSurfaceOverSamplingMethod = inps.corr_oversamplemethod
     objOffset.corrSurfaceOverSamplingFactor = inps.corr_oversample
     print('correlation surface oversampling factor:', inps.corr_oversample)
 
