@@ -240,11 +240,11 @@ cdef class PyCuAmpcor(object):
     def corrSurfaceOverSamplingFactor(self, int a):
         self.c_cuAmpcor.param.oversamplingFactor = a
     @property
-    def corrSufaceOverSamplingMethod(self):
+    def corrSurfaceOverSamplingMethod(self):
         """Oversampling method for correlation surface(0=fft,1=sinc)"""
         return self.c_cuAmpcor.param.oversamplingMethod
     @corrSufaceOverSamplingMethod.setter
-    def corrSufaceOverSamplingMethod(self, int a):
+    def corrSurfaceOverSamplingMethod(self, int a):
         self.c_cuAmpcor.param.oversamplingMethod = a
     @property
     def referenceImageName(self):
