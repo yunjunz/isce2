@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-
 ############################################################
 # Script to from UAVSAR SLC xmls and vrts using isce.      #
 # Modified by Talib Oliver, 2021                           #
 ############################################################
+
+import os
+import re
+import sys
+import glob
+import json
+
 
 usage = """
 Usage: group_segments.py directory [outfile]
@@ -16,11 +22,6 @@ be raised if any image has a different set of segments from the rest (in order
 to trap download errors).
 """
 
-import json
-import os
-import re
-import sys
-import glob
 
 # Regular expression for a member of a UAVSAR SLC stack.
 # Matches .slc and .ann files.

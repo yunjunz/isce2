@@ -20,12 +20,12 @@ python3 group_seg.py download/ > images.json ↵
  
 2. Unpack the UAVSAR segments into two folders, one per segment:
 
-prepareUAVSAR_coregStack_segments.py -i download/ -d eterre_08705_02_BU.dop -o SLC_seg1 -s 1 ↵
-prepareUAVSAR_coregStack_segments.py -i download/ -d eterre_08705_02_BU.dop -o SLC_seg2 -s 2 ↵
+prepUAVSAR_coregStack_seg.py -i download/ -d eterre_08705_02_BU.dop -o SLC_seg1 -s 1 ↵
+prepUAVSAR_coregStack_seg.py -i download/ -d eterre_08705_02_BU.dop -o SLC_seg2 -s 2 ↵
 
 3. After preparing both segments, a concatenation process is computed to form a merged SLC.
  
-uavsar_concatenate_slc.py -w ./ -s1 SLC_seg1 -o SLC_merged ↵
+uavsar_concatenate_slc.py -w ./ -s1 SLC_seg1 -o SLC ↵
  
 4. Once the segments are connected, compute interferograms normally.  
 

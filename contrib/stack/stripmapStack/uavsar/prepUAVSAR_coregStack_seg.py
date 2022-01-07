@@ -4,9 +4,10 @@ import os
 import glob
 import datetime
 import argparse
+import shelve
+
 import isce
 import isceobj
-import shelve 
 from isceobj.Util.decorators import use_api
 from iscesys import DateTimeUtil as DTU
 
@@ -64,7 +65,6 @@ def main(iargs=None):
     inps = cmdLineParse(iargs)
     
     outputDir = os.path.abspath(inps.output)
-    run_unPack = 'run_unPackAlos'
 
     #######################################
   
@@ -95,7 +95,7 @@ def main(iargs=None):
         if not os.path.exists(imgDir):
             os.makedirs(imgDir) ### TO
         # print (imgDir)
-        cmd = 'unpackFrame_UAVSAR_seg.py -i ' + annFile  + ' -d '+ inps.dopFile + ' -s '+ inps.segment + ' -o ' + imgDir
+        cmd = 'unpackFrame_UAVSAR.py -i ' + annFile  + ' -d '+ inps.dopFile + ' -s '+ inps.segment + ' -o ' + imgDir
         ## to read segments
         print (cmd)
         os.system(cmd)
