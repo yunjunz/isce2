@@ -17,6 +17,9 @@ from mroipac.correlation.correlation import Correlation
 import s1a_isce_utils as ut
 
 
+suffix = ''  # '', '_sum', '_sar'
+
+
 def createParser():
     parser = argparse.ArgumentParser( description='Use polynomial offsets and create burst by burst interferograms')
 
@@ -195,15 +198,16 @@ def main(iargs=None):
                 intname = os.path.join(ifgdir, '%s_top_%02d_%02d.int'%(inps.intprefix,ii,ii+1))
 
             else:
-                rdict = {'rangeOff1'  : os.path.join(inps.reference, IWstr, 'range_%02d.off'%(ii)),
-                         'rangeOff2'  : os.path.join(inps.secondary, IWstr, 'range_%02d.off'%(ii)),
-                         'azimuthOff1': os.path.join(inps.secondary, IWstr, 'azimuth_%02d.off'%(ii))}
+                rdict = {'rangeOff1'  : os.path.join(inps.reference, IWstr, f'range{suffix}_{ii:02d}.off'),
+                         'rangeOff2'  : os.path.join(inps.secondary, IWstr, f'range{suffix}_{ii:02d}.off'),
+                         'azimuthOff1': os.path.join(inps.secondary, IWstr, f'azimuth{suffix}_{ii:02d}.off')}
                 intname = os.path.join(ifgdir, '%s_%02d.int'%(inps.intprefix,ii))
 
             ut.adjustCommonValidRegion(reference,secondary)
             fact = 4 * np.pi * secondary.rangePixelSize / secondary.radarWavelength
             intimage = multiply(referencename, secondaryname, intname,
-                                rdict['rangeOff1'], rdict['rangeOff2'], fact, reference, flatten=inps.flatten)
+                                rdict['rangeOff1'], rdict['rangeOff2'],
+                                fact, reference, flatten=inps.flatten)
 
             burst = copy.deepcopy(reference)
             burst.image = intimage
