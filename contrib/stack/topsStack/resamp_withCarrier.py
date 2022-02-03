@@ -15,6 +15,8 @@ from stdproc.stdproc import crossmul
 import s1a_isce_utils as ut
 
 
+suffix = ''  # '', '_sar', '_sum'
+
 def createParser():
     parser = argparse.ArgumentParser( description='Resampling burst by burst SLCs ')
 
@@ -255,8 +257,8 @@ def main(iargs=None):
                 ### If provided, can be used for resampling without running to geo2rdr again for fast results
                 rdict = {'azpoly' : apoly,
                          'rgpoly' : rpoly,
-                         'rangeOff' : os.path.join(offdir, 'range_%02d.off'%(ii+1)),
-                         'azimuthOff': os.path.join(offdir, 'azimuth_%02d.off'%(ii+1))}
+                         'rangeOff' : os.path.join(offdir, f'range{suffix}_{ii+1:02d}.off'),
+                         'azimuthOff': os.path.join(offdir, f'azimuth{suffix}_{ii+1:02d}.off')}
 
 
                 ###For future - should account for azimuth and range misreg here .. ignoring for now.
