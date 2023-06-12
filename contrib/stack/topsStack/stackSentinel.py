@@ -205,6 +205,9 @@ def createParser():
                               'Default: True  for correlation / interferogram workflow, '
                               '         False for slc / offset workflow')
 
+    compute.add_argument('--update', action='store_true', default=False,
+                         help='Enable update mode: skip rerunning if output file(s) exist. Currently supported steps: unwrap.')
+
     return parser
 
 def cmdLineParse(iargs = None):
