@@ -230,6 +230,7 @@ class config(object):
         else:
             self.f.write('rmfilter : False\n')
         self.f.write('method : ' + self.unwMethod + '\n')
+        self.f.write('update : ' + str(self.update) + '\n')
 
     def unwrapSnaphu(self, function):
         self.f.write('###################################'+'\n')

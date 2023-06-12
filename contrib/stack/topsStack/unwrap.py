@@ -75,6 +75,8 @@ def createParser():
 
     parser.add_argument('--rmfilter', action='store_true', default=False,
             help='remove the effect of filtering from final unwrapped interferograms')
+    parser.add_argument('--update', action='store_true', default=False,
+            help='Enable update mode: skip rerunning if output file(s) exist.')
 
     return parser
 
@@ -309,6 +311,36 @@ def remove_filter(intfile, filtfile, unwfile):
 
     return
 
+
+def run_or_skip(in_file, out_files, method='snaphu'):
+    """Check if (re)run is needed or not.
+
+    Skip rerun if:
+    1. out_files exist AND
+    2. out_files are newer than in_file AND
+    3. out_files has the same matrix size as in_file
+    """
+    # check 1: out_files exist
+    meta_files = [x + '.xml' for x in out_files]
+    if not all(os.path.isfile(x) and os.path.getsize(x) > 0 for x in out_files + meta_files):
+        return 'run'
+
+    # check 2: out_file is newer than in_file
+    ti = os.path.getmtime(in_file)
+    to = min(os.path.getmtime(x) for x in out_files)
+    if ti > to:
+        return 'run'
+
+    # check 3: out_file has the same matrix size as in_file
+    in_img = IML.loadImage(os.path.abspath(in_file))[0]
+    out_img = IML.loadImage(os.path.abspath(out_files[0]))[0]
+    if in_img.length != out_img.length or in_img.width != out_img.width:
+        return 'run'
+
+    print(f'{out_files} exists and is newer than {in_file}, skip re-unwrapping.')
+    return 'skip'
+
+
 def main(iargs=None):
     '''
     The main driver.
@@ -317,8 +349,18 @@ def main(iargs=None):
     inps = cmdLineParse(iargs)
     print ('unwrapping method : ' , inps.method)
 
+    # update mode
+    if inps.method == 'icu':
+        in_file = inps.intfile
+        out_files = [inps.unwfile]
+    else:
+        in_file = inps.cohfile
+        out_files = [inps.unwfile, inps.unwfile+'.conncomp']
+    if inps.update and run_or_skip(in_file, out_files) == 'skip':
+        return
+
     if inps.method == 'snaphu':
-        if inps.nomcf: 
+        if inps.nomcf:
             fncall =  runUnwrap
         else:
             fncall = runUnwrapMcf
