@@ -74,11 +74,14 @@ def dropSecondarysWithDifferentNumberOfBursts(secondaryList, reference, swathLis
     '''
     print('checking the number of bursts in coreg_secondarys against the one in reference')
     secondaryList2Drop = []
-    for swath in swathList:
+    for i, swath in enumerate(swathList):
+        print(f'{i+1}/{len(swathList)} IW{swath}:')
         prodReference = ut.loadProduct(os.path.join(reference, 'IW{0}.xml'.format(swath)))
         numBursts = len(prodReference.bursts)
 
-        for secondary in secondaryList:
+        secondaryNum = len(secondaryList)
+        for j, secondary in enumerate(secondaryList):
+            print(f'{j+1}/{secondaryNum} {os.path.basename(secondary)}')
             prodSecondary = ut.loadProduct(os.path.join(secondary, 'IW{0}.xml'.format(swath)))
             if len(prodSecondary.bursts) != numBursts:
                 msg = 'WARNING: {} has different number of bursts ({}) than the reference {} ({}) for swath {}'.format(
