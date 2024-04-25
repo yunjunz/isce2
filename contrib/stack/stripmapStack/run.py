@@ -63,7 +63,7 @@ def main(iargs=None):
     #spawn a pool of threads, and pass them queue instance
     for i in range(opt_dict['parallel']):
         t = ThreadRun(queue)
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
 
     #populate queue with data
